@@ -249,15 +249,29 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   headShape = defaultEdge(headShape);
   tailShape = defaultEdge(tailShape);
 
-  const getMainDivPos = () => {
-    // if (!mainDivRef.current) return { x: 0, y: 0 };
-    let { left: xarrowElemX, top: xarrowElemY } = svgRef.current.getBoundingClientRect();
-    let xarrowStyle = getComputedStyle(svgRef.current);
-    let xarrowStyleLeft = Number(xarrowStyle.left.slice(0, -2));
-    let xarrowStyleTop = Number(xarrowStyle.top.slice(0, -2));
+  const getPos = (elem: HTMLElement) => {
+    let { left, top, right, bottom } = elem?.getBoundingClientRect();
+    let style = getComputedStyle(elem);
+    let leftStyle = Number(style.left.slice(0, -2));
+    let topStyle = Number(style.top.slice(0, -2));
     return {
-      x: xarrowElemX - xarrowStyleLeft,
-      y: xarrowElemY - xarrowStyleTop,
+      x: left - leftStyle,
+      y: top - topStyle,
+      right: right - leftStyle,
+      bottom: bottom - topStyle,
+    };
+  };
+
+  const getSvgPos = () => {
+    // if (!mainDivRef.current) return { x: 0, y: 0 };
+    let { left: svgX, top: svgY } = svgRef.current.getBoundingClientRect();
+    let svgStyle = getComputedStyle(svgRef.current);
+    let svgStyleLeft = Number(svgStyle.left.slice(0, -2));
+    // console.log(svgStyle.left, svgStyleLeft);
+    let svgStyleTop = Number(svgStyle.top.slice(0, -2));
+    return {
+      x: svgX - svgStyleLeft,
+      y: svgY - svgStyleTop,
     };
   };
 
@@ -274,6 +288,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   const getElemsPos = (): _prevPosType => {
     let start = getElemPos(startRef.current);
     let end = getElemPos(endRef.current);
+    // let start = getPos(startRef.current);
+    // let end = getPos(endRef.current);
     return { start, end };
   };
 
@@ -284,6 +300,11 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   const updatePosition = (positions: _prevPosType = prevPosState.current): void => {
     let { start: sPos } = positions;
     let { end: ePos } = positions;
+    let startWidth = sPos.right - sPos.x;
+    let startHeight = sPos.bottom - sPos.y;
+    let endWidth = ePos.right - ePos.x;
+    let endHeight = ePos.bottom - ePos.y;
+
     let headOrient: number = 0;
     let tailOrient: number = 0;
 
@@ -302,13 +323,13 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     headShape = headShape as svgCustomEdgeType;
     tailShape = tailShape as svgCustomEdgeType;
 
-    let mainDivPos = getMainDivPos();
+    let mainDivPos = getSvgPos();
     let cx0 = Math.min(startPoint.x, endPoint.x) - mainDivPos.x;
     let cy0 = Math.min(startPoint.y, endPoint.y) - mainDivPos.y;
     let dx = endPoint.x - startPoint.x;
     let dy = endPoint.y - startPoint.y;
-    let absDx = Math.abs(endPoint.x - startPoint.x);
-    let absDy = Math.abs(endPoint.y - startPoint.y);
+    let absDx = Math.abs(dx);
+    let absDy = Math.abs(dy);
     let xSign = dx > 0 ? 1 : -1;
     let ySign = dy > 0 ? 1 : -1;
     let [headOffset, tailOffset] = [headShape.offsetForward, tailShape.offsetForward];
@@ -320,11 +341,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let yHeadOffset = 0;
     let xTailOffset = 0;
     let yTailOffset = 0;
-
-    // let svgFactor = Math.max(_headBox.width, _headBox.height);
-    // headOffset *= Math.min(_headBox.width, _headBox.height);
-
-    // fHeadSize /= svgFactor;
 
     let _headOffset = fHeadSize * headOffset;
     let _tailOffset = fTailSize * tailOffset;
@@ -348,231 +364,288 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
     let biggerSide = headSize > tailSize ? headSize : tailSize;
     let _calc = strokeWidth + (strokeWidth * biggerSide) / 2;
-    let excRight = _calc;
-    let excLeft = _calc;
-    let excUp = _calc;
-    let excDown = _calc;
-    excLeft += Number(_extendSVGcanvas);
-    excRight += Number(_extendSVGcanvas);
-    excUp += Number(_extendSVGcanvas);
-    excDown += Number(_extendSVGcanvas);
+    let excRight = _calc + Number(_extendSVGcanvas);
+    let excLeft = _calc + Number(_extendSVGcanvas);
+    let excUp = _calc + Number(_extendSVGcanvas);
+    let excDown = _calc + Number(_extendSVGcanvas);
 
     ////////////////////////////////////
     // arrow point to point calculations
-    let x1 = 0,
-      x2 = absDx,
-      y1 = 0,
-      y2 = absDy;
+    let x1 = excLeft,
+      x2 = absDx + excLeft,
+      y1 = excUp,
+      y2 = absDy + excUp;
     if (dx < 0) [x1, x2] = [x2, x1];
     if (dy < 0) [y1, y2] = [y2, y1];
 
-    ////////////////////////////////////
-    // arrow curviness and arrowhead placement calculations
+    let cpx1 = _cpx1Offset,
+      cpy1 = _cpy1Offset,
+      cpx2 = _cpx2Offset,
+      cpy2 = _cpy2Offset;
 
-    if (cu === 0) {
-      // in case of straight path
-      let headAngel = Math.atan(absDy / absDx);
-
-      if (showHead) {
-        x2 -= fHeadSize * (1 - headOffset) * xSign * Math.cos(headAngel);
-        y2 -= fHeadSize * (1 - headOffset) * ySign * Math.sin(headAngel);
-
-        headAngel *= ySign;
-        if (xSign < 0) headAngel = (Math.PI - headAngel * xSign) * xSign;
-        xHeadOffset = Math.cos(headAngel) * _headOffset - (Math.sin(headAngel) * fHeadSize) / 2;
-        yHeadOffset = (Math.cos(headAngel) * fHeadSize) / 2 + Math.sin(headAngel) * _headOffset;
-        headOrient = (headAngel * 180) / Math.PI;
-      }
-
-      let tailAngel = Math.atan(absDy / absDx);
-      if (showTail) {
-        x1 += fTailSize * (1 - tailOffset) * xSign * Math.cos(tailAngel);
-        y1 += fTailSize * (1 - tailOffset) * ySign * Math.sin(tailAngel);
-        tailAngel *= -ySign;
-        if (xSign > 0) tailAngel = (Math.PI - tailAngel * xSign) * xSign;
-        xTailOffset = Math.cos(tailAngel) * _tailOffset - (Math.sin(tailAngel) * fTailSize) / 2;
-        yTailOffset = (Math.cos(tailAngel) * fTailSize) / 2 + Math.sin(tailAngel) * _tailOffset;
-        tailOrient = (tailAngel * 180) / Math.PI;
-      }
-    } else {
-      // in case of smooth path
-      if (endAnchorPosition === 'middle') {
-        // in case a middle anchor is chosen for endAnchor choose from which side to attach to the middle of the element
-        if (absDx > absDy) {
-          endAnchorPosition = xSign ? 'left' : 'right';
-        } else {
-          endAnchorPosition = ySign ? 'top' : 'bottom';
-        }
-      }
-      if (showHead) {
-        if (['left', 'right'].includes(endAnchorPosition)) {
-          //todo: rotate all transforms(and arrows svg) by 90
-          //// for 90 deg turn
-          // xHeadOffset = -fHeadSize + _headOffset * xSign;
-          // x2 -= fHeadSize * (1 - headOffset) * xSign;
-          // yHeadOffset = (fHeadSize / 2) * xSign;
-          // if (endAnchorPosition === "left") {
-          //   headOrient = 90;
-          // ...
-
-          // const headBox = headRef.current.getBBox({ stroke: true });
-
-          xHeadOffset += _headOffset * xSign;
-          // x2 -= fHeadSize * xSign - xHeadOffset;
-          x2 -= fHeadSize * (1 - headOffset) * xSign; //same!
-          yHeadOffset += (fHeadSize * xSign) / 2;
-
-          // const xm = 1 - (_headBox.width + _headBox.x);
-          // xHeadOffset += _headBox.height / headSize;
-          // xHeadOffset = xHeadOffset - xm;
-          // xHeadOffset -= (_headBox.x / (_headBox.height + _headBox.width)) * fHeadSize;
-          // yHeadOffset = yHeadOffset - (1 - _headBox.height - _headBox.y) * strokeWidth * yHeadOffset;
-
-          if (endAnchorPosition === 'left') {
-            headOrient = 0;
-            if (xSign < 0) headOrient += 180;
-          } else {
-            headOrient = 180;
-            if (xSign > 0) headOrient += 180;
-          }
-        } else if (['top', 'bottom'].includes(endAnchorPosition)) {
-          xHeadOffset += (fHeadSize * -ySign) / 2;
-          yHeadOffset += _headOffset * ySign;
-          y2 -= fHeadSize * ySign - yHeadOffset;
-          if (endAnchorPosition === 'top') {
-            headOrient = 270;
-            if (ySign > 0) headOrient += 180;
-          } else {
-            headOrient = 90;
-            if (ySign < 0) headOrient += 180;
-          }
-          // const xm = 1 - _headBox.width - _headBox.x;
-          // yHeadOffset = yHeadOffset - xm * strokeWidth * yHeadOffset;
-        }
-      }
-    }
-    if (showTail && cu !== 0) {
-      if (['left', 'right'].includes(startAnchorPosition)) {
-        xTailOffset += _tailOffset * -xSign;
-        x1 += fTailSize * xSign + xTailOffset;
-        yTailOffset += -(fTailSize * xSign) / 2;
-        if (startAnchorPosition === 'left') {
-          tailOrient = 180;
-          if (xSign < 0) tailOrient += 180;
-        } else {
-          tailOrient = 0;
-          if (xSign > 0) tailOrient += 180;
-        }
-      } else if (['top', 'bottom'].includes(startAnchorPosition)) {
-        yTailOffset += _tailOffset * -ySign;
-        y1 += fTailSize * ySign + yTailOffset;
-        xTailOffset += (fTailSize * ySign) / 2;
-        if (startAnchorPosition === 'top') {
-          tailOrient = 90;
-          if (ySign > 0) tailOrient += 180;
-        } else {
-          tailOrient = 270;
-          if (ySign < 0) tailOrient += 180;
-        }
-      }
-    }
-
-    // if (endAnchorPosition == startAnchorPosition) headOrient += 180;
     let arrowHeadOffset = { x: xHeadOffset, y: yHeadOffset };
     let arrowTailOffset = { x: xTailOffset, y: yTailOffset };
 
-    let cpx1 = x1,
-      cpy1 = y1,
-      cpx2 = x2,
-      cpy2 = y2;
+    const startDir = {
+        forward: 0,
+        rightness: 0,
+      },
+      endDir = {
+        forward: 0,
+        rightness: 0,
+      };
 
-    let curvesPossibilities = {};
-    if (path === 'smooth')
-      curvesPossibilities = {
-        hh: () => {
-          //horizontal - from right to left or the opposite
-          cpx1 += absDx * cu * xSign;
-          cpx2 -= absDx * cu * xSign;
-          // if (absDx < 2 * headOffset) {
-          //   cpx1 += headOffset * xSign - absDx / 2;
-          //   cpx2 -= headOffset * xSign * 2 - absDx;
-          // }
-          // cpx1 += headOffset * 2 * xSign;
-          // cpx2 -= headOffset * 2 * xSign;
-        },
-        vv: () => {
-          //vertical - from top to bottom or opposite
-          cpy1 += absDy * cu * ySign;
-          cpy2 -= absDy * cu * ySign;
-          // cpy1 += headOffset * 2 * ySign;
-          // cpy2 -= headOffset * 2 * ySign;
-        },
-        hv: () => {
-          // start horizontally then vertically
-          // from v side to h side
-          cpx1 += absDx * cu * xSign;
-          cpy2 -= absDy * cu * ySign;
-        },
-        vh: () => {
-          // start vertically then horizontally
-          // from h side to v side
-          cpy1 += absDy * cu * ySign;
-          cpx2 -= absDx * cu * xSign;
-        },
-      };
-    else if (path === 'grid') {
-      curvesPossibilities = {
-        hh: () => {
-          // cpx1 += (absDx * 0.5 - headOffset / 2) * xSign;
-          // cpx2 -= (absDx * 0.5 - headOffset / 2) * xSign;
-          cpx1 += absDx * gridBreak * xSign;
-          cpx2 -= absDx * (1 - gridBreak) * xSign;
-          if (showHead) {
-            cpx1 -= ((fHeadSize * (1 - headOffset)) / 2) * xSign;
-            cpx2 += ((fHeadSize * (1 - headOffset)) / 2) * xSign;
-          }
-          if (showTail) {
-            cpx1 -= ((fTailSize * (1 - tailOffset)) / 2) * xSign;
-            cpx2 += ((fTailSize * (1 - tailOffset)) / 2) * xSign;
-          }
-        },
-        vv: () => {
-          cpy1 += absDy * gridBreak * ySign;
-          cpy2 -= absDy * (1 - gridBreak) * ySign;
-          if (showHead) {
-            cpy1 -= ((fHeadSize * (1 - headOffset)) / 2) * ySign;
-            cpy2 += ((fHeadSize * (1 - headOffset)) / 2) * ySign;
-          }
-          if (showTail) {
-            cpy1 -= ((fTailSize * (1 - tailOffset)) / 2) * ySign;
-            cpy2 += ((fTailSize * (1 - tailOffset)) / 2) * ySign;
-          }
-        },
-        hv: () => {
-          cpx1 = x2;
-        },
-        vh: () => {
-          cpy1 = y2;
-        },
-      };
+    let arrowPath = `M ${x1} ${y1}`;
+    let p = { x: 0, y: 0 };
+    let minPad = 30;
+    if (path === 'smooth') {
+      cpx1 += absDx;
+      cpx2 -= absDx;
+      if (dx < minPad) {
+        let dHe = startHeight / 2 + (absDy - startHeight / 2 - endHeight / 2) / 2;
+        // let dHe = startHeight / 2 + 15;
+        arrowPath += `c ${minPad} ${0}, ${minPad} ${dHe}, ${minPad / 2} ${dHe}`;
+        arrowPath += `c ${dx - minPad} ${0}, ${dx - minPad} ${absDy - dHe}, ${dx - minPad / 2} ${absDy - dHe}`;
+      } else {
+        arrowPath += `c ${absDx} ${0}, ${0} ${dy}, ${dx} ${dy}`;
+      }
+      console.log(cpx1);
+      // arrowPath += `T ${cpx1} ${cpy1} ${x2} ${y2}`;
+      // // works fine
+      // cpx1 += absDx / 2 + strokeWidth;
+      // cpx2 -= absDx / 2 + strokeWidth;
+      // if (dx < 0) {
+      //   cpy1 += Math.min(dy, Math.min(absDx * 2, startHeight * 2));
+      //   cpy2 -= Math.min(absDx * 2, endHeight * 2) * ySign;
+      //   if (absDy / 2 < startHeight / 2) {
+      //     // cpy2 += startHeight * ySign;
+      //     // cpx2 -= endWidth * xSign;
+      //     console.log('!');
+      //   }
+      // }
+    } else if (path === 'grid') {
+    } else if (path === 'straight') {
     }
+    // arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
 
-    // smart select best curve for the current anchors
-    let selectedCurviness = '';
-    if (['left', 'right'].includes(startAnchorPosition)) selectedCurviness += 'h';
-    else if (['bottom', 'top'].includes(startAnchorPosition)) selectedCurviness += 'v';
-    else if (startAnchorPosition === 'middle') selectedCurviness += 'm';
-    if (['left', 'right'].includes(endAnchorPosition)) selectedCurviness += 'h';
-    else if (['bottom', 'top'].includes(endAnchorPosition)) selectedCurviness += 'v';
-    else if (endAnchorPosition === 'middle') selectedCurviness += 'm';
-    if (absDx > absDy) selectedCurviness = selectedCurviness.replace(/m/g, 'h');
-    else selectedCurviness = selectedCurviness.replace(/m/g, 'v');
-    curvesPossibilities[selectedCurviness]();
+    // if (path === 'grid') {
+    //   // todo: support gridRadius
+    //   //  arrowPath = `M ${x1} ${y1} L  ${cpx1 - 10} ${cpy1} a10,10 0 0 1 10,10
+    //   // L ${cpx2} ${cpy2 - 10} a10,10 0 0 0 10,10 L  ${x2} ${y2}`;
+    //   arrowPath = `M ${x1} ${y1} L  ${cpx1} ${cpy1} L ${cpx2} ${cpy2} ${x2} ${y2}`;
+    // } else if (path === 'smooth') arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
 
-    cpx1 += _cpx1Offset;
-    cpy1 += _cpy1Offset;
-    cpx2 += _cpx2Offset;
-    cpy2 += _cpy2Offset;
+    // ////////////////////////////////////
+    // // arrow point to point calculations
+    // let x1 = 0,
+    //   x2 = absDx,
+    //   y1 = 0,
+    //   y2 = absDy;
+    // if (dx < 0) [x1, x2] = [x2, x1];
+    // if (dy < 0) [y1, y2] = [y2, y1];
+    //
+    // ////////////////////////////////////
+    // // arrow curviness and arrowhead placement calculations
+    //
+    // if (cu === 0) {
+    //   // in case of straight path
+    //   let headAngel = Math.atan(absDy / absDx);
+    //
+    //   if (showHead) {
+    //     x2 -= fHeadSize * (1 - headOffset) * xSign * Math.cos(headAngel);
+    //     y2 -= fHeadSize * (1 - headOffset) * ySign * Math.sin(headAngel);
+    //
+    //     headAngel *= ySign;
+    //     if (xSign < 0) headAngel = (Math.PI - headAngel * xSign) * xSign;
+    //     xHeadOffset = Math.cos(headAngel) * _headOffset - (Math.sin(headAngel) * fHeadSize) / 2;
+    //     yHeadOffset = (Math.cos(headAngel) * fHeadSize) / 2 + Math.sin(headAngel) * _headOffset;
+    //     headOrient = (headAngel * 180) / Math.PI;
+    //   }
+    //
+    //   let tailAngel = Math.atan(absDy / absDx);
+    //   if (showTail) {
+    //     x1 += fTailSize * (1 - tailOffset) * xSign * Math.cos(tailAngel);
+    //     y1 += fTailSize * (1 - tailOffset) * ySign * Math.sin(tailAngel);
+    //     tailAngel *= -ySign;
+    //     if (xSign > 0) tailAngel = (Math.PI - tailAngel * xSign) * xSign;
+    //     xTailOffset = Math.cos(tailAngel) * _tailOffset - (Math.sin(tailAngel) * fTailSize) / 2;
+    //     yTailOffset = (Math.cos(tailAngel) * fTailSize) / 2 + Math.sin(tailAngel) * _tailOffset;
+    //     tailOrient = (tailAngel * 180) / Math.PI;
+    //   }
+    // } else {
+    //   // in case of smooth path
+    //   if (endAnchorPosition === 'middle') {
+    //     // in case a middle anchor is chosen for endAnchor choose from which side to attach to the middle of the element
+    //     if (absDx > absDy) {
+    //       endAnchorPosition = xSign ? 'left' : 'right';
+    //     } else {
+    //       endAnchorPosition = ySign ? 'top' : 'bottom';
+    //     }
+    //   }
+    //   if (showHead) {
+    //     if (['left', 'right'].includes(endAnchorPosition)) {
+    //       //todo: rotate all transforms(and arrows svg) by 90
+    //       //// for 90 deg turn
+    //       // xHeadOffset = -fHeadSize + _headOffset * xSign;
+    //       // x2 -= fHeadSize * (1 - headOffset) * xSign;
+    //       // yHeadOffset = (fHeadSize / 2) * xSign;
+    //       // if (endAnchorPosition === "left") {
+    //       //   headOrient = 90;
+    //       // ...
+    //
+    //       // const headBox = headRef.current.getBBox({ stroke: true });
+    //
+    //       xHeadOffset += _headOffset * xSign;
+    //       // x2 -= fHeadSize * xSign - xHeadOffset;
+    //       x2 -= fHeadSize * (1 - headOffset) * xSign; //same!
+    //       yHeadOffset += (fHeadSize * xSign) / 2;
+    //
+    //       // const xm = 1 - (_headBox.width + _headBox.x);
+    //       // xHeadOffset += _headBox.height / headSize;
+    //       // xHeadOffset = xHeadOffset - xm;
+    //       // xHeadOffset -= (_headBox.x / (_headBox.height + _headBox.width)) * fHeadSize;
+    //       // yHeadOffset = yHeadOffset - (1 - _headBox.height - _headBox.y) * strokeWidth * yHeadOffset;
+    //
+    //       if (endAnchorPosition === 'left') {
+    //         headOrient = 0;
+    //         if (xSign < 0) headOrient += 180;
+    //       } else {
+    //         headOrient = 180;
+    //         if (xSign > 0) headOrient += 180;
+    //       }
+    //     } else if (['top', 'bottom'].includes(endAnchorPosition)) {
+    //       xHeadOffset += (fHeadSize * -ySign) / 2;
+    //       yHeadOffset += _headOffset * ySign;
+    //       y2 -= fHeadSize * ySign - yHeadOffset;
+    //       if (endAnchorPosition === 'top') {
+    //         headOrient = 270;
+    //         if (ySign > 0) headOrient += 180;
+    //       } else {
+    //         headOrient = 90;
+    //         if (ySign < 0) headOrient += 180;
+    //       }
+    //       // const xm = 1 - _headBox.width - _headBox.x;
+    //       // yHeadOffset = yHeadOffset - xm * strokeWidth * yHeadOffset;
+    //     }
+    //   }
+    // }
+    // if (showTail && cu !== 0) {
+    //   if (['left', 'right'].includes(startAnchorPosition)) {
+    //     xTailOffset += _tailOffset * -xSign;
+    //     x1 += fTailSize * xSign + xTailOffset;
+    //     yTailOffset += -(fTailSize * xSign) / 2;
+    //     if (startAnchorPosition === 'left') {
+    //       tailOrient = 180;
+    //       if (xSign < 0) tailOrient += 180;
+    //     } else {
+    //       tailOrient = 0;
+    //       if (xSign > 0) tailOrient += 180;
+    //     }
+    //   } else if (['top', 'bottom'].includes(startAnchorPosition)) {
+    //     yTailOffset += _tailOffset * -ySign;
+    //     y1 += fTailSize * ySign + yTailOffset;
+    //     xTailOffset += (fTailSize * ySign) / 2;
+    //     if (startAnchorPosition === 'top') {
+    //       tailOrient = 90;
+    //       if (ySign > 0) tailOrient += 180;
+    //     } else {
+    //       tailOrient = 270;
+    //       if (ySign < 0) tailOrient += 180;
+    //     }
+    //   }
+    // }
+    //
+    // // if (endAnchorPosition == startAnchorPosition) headOrient += 180;
+    // let arrowHeadOffset = { x: xHeadOffset, y: yHeadOffset };
+    // let arrowTailOffset = { x: xTailOffset, y: yTailOffset };
+    //
+    // let cpx1 = x1,
+    //   cpy1 = y1,
+    //   cpx2 = x2,
+    //   cpy2 = y2;
+    //
+    // let curvesPossibilities = {};
+    // if (path === 'smooth')
+    //   curvesPossibilities = {
+    //     hh: () => {
+    //       //horizontal - from right to left or the opposite
+    //       cpx1 += absDx * cu * xSign;
+    //       cpx2 -= absDx * cu * xSign;
+    //       // if (absDx < 2 * headOffset) {
+    //       //   cpx1 += headOffset * xSign - absDx / 2;
+    //       //   cpx2 -= headOffset * xSign * 2 - absDx;
+    //       // }
+    //       // cpx1 += headOffset * 2 * xSign;
+    //       // cpx2 -= headOffset * 2 * xSign;
+    //     },
+    //     vv: () => {
+    //       //vertical - from top to bottom or opposite
+    //       cpy1 += absDy * cu * ySign;
+    //       cpy2 -= absDy * cu * ySign;
+    //       // cpy1 += headOffset * 2 * ySign;
+    //       // cpy2 -= headOffset * 2 * ySign;
+    //     },
+    //     hv: () => {
+    //       // start horizontally then vertically
+    //       // from v side to h side
+    //       cpx1 += absDx * cu * xSign;
+    //       cpy2 -= absDy * cu * ySign;
+    //     },
+    //     vh: () => {
+    //       // start vertically then horizontally
+    //       // from h side to v side
+    //       cpy1 += absDy * cu * ySign;
+    //       cpx2 -= absDx * cu * xSign;
+    //     },
+    //   };
+    // else if (path === 'grid') {
+    //   curvesPossibilities = {
+    //     hh: () => {
+    //       // cpx1 += (absDx * 0.5 - headOffset / 2) * xSign;
+    //       // cpx2 -= (absDx * 0.5 - headOffset / 2) * xSign;
+    //       cpx1 += absDx * gridBreak * xSign;
+    //       cpx2 -= absDx * (1 - gridBreak) * xSign;
+    //       if (showHead) {
+    //         cpx1 -= ((fHeadSize * (1 - headOffset)) / 2) * xSign;
+    //         cpx2 += ((fHeadSize * (1 - headOffset)) / 2) * xSign;
+    //       }
+    //       if (showTail) {
+    //         cpx1 -= ((fTailSize * (1 - tailOffset)) / 2) * xSign;
+    //         cpx2 += ((fTailSize * (1 - tailOffset)) / 2) * xSign;
+    //       }
+    //     },
+    //     vv: () => {
+    //       cpy1 += absDy * gridBreak * ySign;
+    //       cpy2 -= absDy * (1 - gridBreak) * ySign;
+    //       if (showHead) {
+    //         cpy1 -= ((fHeadSize * (1 - headOffset)) / 2) * ySign;
+    //         cpy2 += ((fHeadSize * (1 - headOffset)) / 2) * ySign;
+    //       }
+    //       if (showTail) {
+    //         cpy1 -= ((fTailSize * (1 - tailOffset)) / 2) * ySign;
+    //         cpy2 += ((fTailSize * (1 - tailOffset)) / 2) * ySign;
+    //       }
+    //     },
+    //     hv: () => {
+    //       cpx1 = x2;
+    //     },
+    //     vh: () => {
+    //       cpy1 = y2;
+    //     },
+    //   };
+    // }
+    //
+    // // smart select best curve for the current anchors
+    // let selectedCurviness = '';
+    // if (['left', 'right'].includes(startAnchorPosition)) selectedCurviness += 'h';
+    // else if (['bottom', 'top'].includes(startAnchorPosition)) selectedCurviness += 'v';
+    // else if (startAnchorPosition === 'middle') selectedCurviness += 'm';
+    // if (['left', 'right'].includes(endAnchorPosition)) selectedCurviness += 'h';
+    // else if (['bottom', 'top'].includes(endAnchorPosition)) selectedCurviness += 'v';
+    // else if (endAnchorPosition === 'middle') selectedCurviness += 'm';
+    // if (absDx > absDy) selectedCurviness = selectedCurviness.replace(/m/g, 'h');
+    // else selectedCurviness = selectedCurviness.replace(/m/g, 'v');
+    // curvesPossibilities[selectedCurviness]();
 
     ////////////////////////////////////
     // canvas smart size adjustments
@@ -591,14 +664,14 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       excDown += _calc;
     }
 
-    x1 += excLeft;
-    x2 += excLeft;
-    y1 += excUp;
-    y2 += excUp;
-    cpx1 += excLeft;
-    cpx2 += excLeft;
-    cpy1 += excUp;
-    cpy2 += excUp;
+    // x1 += excLeft;
+    // x2 += excLeft;
+    // y1 += excUp;
+    // y2 += excUp;
+    // cpx1 += excLeft;
+    // cpx2 += excLeft;
+    // cpy1 += excUp;
+    // cpy2 += excUp;
 
     const cw = absDx + excLeft + excRight,
       ch = absDy + excUp + excDown;
@@ -613,13 +686,12 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     const labelEndPos = { x: bzx(0.99), y: bzy(0.99) };
     const arrowEnd = { x: bzx(1), y: bzy(1) };
 
-    let arrowPath;
-    if (path === 'grid') {
-      // todo: support gridRadius
-      //  arrowPath = `M ${x1} ${y1} L  ${cpx1 - 10} ${cpy1} a10,10 0 0 1 10,10
-      // L ${cpx2} ${cpy2 - 10} a10,10 0 0 0 10,10 L  ${x2} ${y2}`;
-      arrowPath = `M ${x1} ${y1} L  ${cpx1} ${cpy1} L ${cpx2} ${cpy2} ${x2} ${y2}`;
-    } else if (path === 'smooth') arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
+    // if (path === 'grid') {
+    //   // todo: support gridRadius
+    //   //  arrowPath = `M ${x1} ${y1} L  ${cpx1 - 10} ${cpy1} a10,10 0 0 1 10,10
+    //   // L ${cpx2} ${cpy2 - 10} a10,10 0 0 0 10,10 L  ${x2} ${y2}`;
+    //   arrowPath = `M ${x1} ${y1} L  ${cpx1} ${cpy1} L ${cpx2} ${cpy2} ${x2} ${y2}`;
+    // } else if (path === 'smooth') arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
 
     setSt({
       cx0,
@@ -807,6 +879,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
               // strokeDasharray={'0 0'}
               strokeWidth={strokeWidth}
               fill="transparent"
+              // strokeLinejoin={'round'}
+              // strokeLinecap={'round'}
               pointerEvents="visibleStroke"
               {...(passProps as any)}
               {...arrowBodyProps}>
