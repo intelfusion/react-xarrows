@@ -378,10 +378,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     if (dx < 0) [x1, x2] = [x2, x1];
     if (dy < 0) [y1, y2] = [y2, y1];
 
-    let cpx1 = _cpx1Offset,
-      cpy1 = _cpy1Offset,
-      cpx2 = _cpx2Offset,
-      cpy2 = _cpy2Offset;
+    let cpx1 = x1 + _cpx1Offset,
+      cpy1 = y1 + _cpy1Offset,
+      cpx2 = x2 + _cpx2Offset,
+      cpy2 = y2 + _cpy2Offset;
 
     let arrowHeadOffset = { x: xHeadOffset, y: yHeadOffset };
     let arrowTailOffset = { x: xTailOffset, y: yTailOffset };
@@ -395,21 +395,55 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
         rightness: 0,
       };
 
+    const line = (pointA, pointB) => {
+      const lengthX = pointB[0] - pointA[0];
+      const lengthY = pointB[1] - pointA[1];
+      return {
+        length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
+        angle: Math.atan2(lengthY, lengthX),
+      };
+    };
+    const smoothing = 0.2;
+    const controlPoint = (current, previous, next, reverse = false) => {
+      const p = previous || current;
+      const n = next || current;
+
+      const o = line(p, n);
+
+      // If is end-control-point, add PI to the angle to go backward
+      const angle = o.angle + (reverse ? Math.PI : 0);
+      const length = o.length * smoothing;
+
+      // The control point position is relative to the current point
+      const x = current[0] + Math.cos(angle) * length;
+      const y = current[1] + Math.sin(angle) * length;
+      return [x, y];
+    };
+    const bezierCommand = (point, i, a) => {
+      // start control point
+      const cps = controlPoint(a[i - 1], a[i - 2], point);
+
+      // end control point
+      const cpe = controlPoint(point, a[i - 1], a[i + 1], true);
+      return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
+    };
+
     let arrowPath = `M ${x1} ${y1}`;
     let p = { x: 0, y: 0 };
-    let minPad = 30;
+    let minPad = 15;
     if (path === 'smooth') {
-      cpx1 += absDx;
-      cpx2 -= absDx;
-      if (dx < minPad) {
-        let dHe = startHeight / 2 + (absDy - startHeight / 2 - endHeight / 2) / 2;
-        // let dHe = startHeight / 2 + 15;
-        arrowPath += `c ${minPad} ${0}, ${minPad} ${dHe}, ${minPad / 2} ${dHe}`;
-        arrowPath += `c ${dx - minPad} ${0}, ${dx - minPad} ${absDy - dHe}, ${dx - minPad / 2} ${absDy - dHe}`;
-      } else {
-        arrowPath += `c ${absDx} ${0}, ${0} ${dy}, ${dx} ${dy}`;
-      }
-      console.log(cpx1);
+      arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
+      // cpx1 += absDx;
+      // cpx2 -= absDx;
+      // if (dx < minPad) {
+      //   let dHe = startHeight / 2 + (absDy - startHeight / 2 - endHeight / 2) / 2;
+      //   // let dHe = startHeight / 2 + 15;
+      //   arrowPath += `c ${minPad} ${0}, ${minPad} ${dHe}, ${minPad / 2} ${dHe}`;
+      //   arrowPath += `c ${dx - minPad} ${0}, ${dx - minPad} ${absDy - dHe}, ${dx - minPad / 2} ${absDy - dHe}`;
+      // } else {
+      //   arrowPath += `c ${absDx} ${0}, ${0} ${dy}, ${dx} ${dy}`;
+      // }
+      // console.log(cpx1);
       // arrowPath += `T ${cpx1} ${cpy1} ${x2} ${y2}`;
       // // works fine
       // cpx1 += absDx / 2 + strokeWidth;
@@ -426,7 +460,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     } else if (path === 'grid') {
     } else if (path === 'straight') {
     }
-    // arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
 
     // if (path === 'grid') {
     //   // todo: support gridRadius
