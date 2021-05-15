@@ -21,9 +21,9 @@ const boxStyle = {
   justifyContent: 'center',
 };
 
-const Box = ({ id }) => {
+const Box = ({ id, style = {} }) => {
   return (
-    <div id={id} style={boxStyle}>
+    <div id={id} style={{ ...boxStyle, ...style }}>
       {id}
     </div>
   );
@@ -71,35 +71,37 @@ const canvasStyle = {
   color: 'black',
 };
 
-const DraggableBox = ({ box, forceRerender }) => {
+const DraggableBox = ({ box, forceRerender, style = {} }) => {
   return (
     <Draggable onDrag={forceRerender} onStop={forceRerender}>
-      <div ref={box.ref} id={box.id} style={{ ...boxStyle, position: 'absolute', left: box.x, top: box.y }}>
+      <div ref={box.ref} id={box.id} style={{ ...boxStyle, position: 'absolute', left: box.x, top: box.y, ...style }}>
         {box.id}
       </div>
     </Draggable>
   );
 };
 
-const DraggableTemplate = (props) => {
+const DraggableTemplate = ({ box1: box1Style, box2: box2Style, ...xarrowProps }) => {
   const [, setRender] = useState({});
   const forceRerender = () => setRender({});
   const box = { id: 'box1', x: 20, y: 20 };
   const box2 = { id: 'box2', x: 320, y: 120 };
   return (
     <div style={canvasStyle} id="canvas">
-      <DraggableBox box={box} forceRerender={forceRerender} />
-      <DraggableBox box={box2} forceRerender={forceRerender} />
-      <Xarrow start={'box1'} end={'box2'} {...props} />
+      <DraggableBox box={box} forceRerender={forceRerender} style={box1Style} />
+      <DraggableBox box={box2} forceRerender={forceRerender} style={box2Style} />
+      <Xarrow start={'box1'} end={'box2'} {...xarrowProps} />
     </div>
   );
 };
 
-export const CustomSimple = (args) => <DraggableTemplate {...args} />;
+export const CustomSimple = (ar) => <DraggableTemplate {...ar} />;
 
 CustomSimple.args = {
-  startAnchor: 'auto',
-  endAnchor: 'auto',
+  box1: { height: 150, width: 100 },
+  box2: { height: 30, width: 100 },
+  startAnchor: 'right',
+  endAnchor: 'left',
   label: null,
   color: 'CornflowerBlue',
   lineColor: null,
@@ -118,6 +120,8 @@ CustomSimple.args = {
   tailShape: 'arrow1',
   animateDrawing: false,
   showXarrow: true,
+  _debug: true,
+  _extendSVGcanvas: 1000,
 };
 
 export const CustomAdvanced = CustomSimple.bind({});

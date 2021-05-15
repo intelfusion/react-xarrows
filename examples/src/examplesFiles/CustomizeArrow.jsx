@@ -265,7 +265,7 @@ const CustomizeArrow = () => {
   const [middleLabel, setMiddleLabel] = useState('middleLabel');
   const [endLabel, setEndLabel] = useState('fancy end label');
   const [_extendSVGcanvas, setExtendSVGcanvas] = useState(0);
-  const [_debug, set_Debug] = useState(false);
+  const [_debug, set_Debug] = useState(true);
   const [_cpx1Offset, set_Cpx1] = useState(0);
   const [_cpy1Offset, set_Cpy1] = useState(0);
   const [_cpx2Offset, set_Cpx2] = useState(0);
