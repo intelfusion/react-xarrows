@@ -3,6 +3,7 @@ import isEqual from 'lodash.isequal';
 import pick from 'lodash.pick';
 import omit from 'lodash.omit';
 import { getElementByPropGiven } from './utils';
+import { smoothBezierPoints } from './utils/buzierSmooth';
 import PT from 'prop-types';
 import { buzzierMinSols, bzFunction } from './utils/buzzier';
 import { getShortestLine, prepareAnchorLines } from './utils/anchors';
@@ -395,44 +396,27 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
         rightness: 0,
       };
 
-    const line = (pointA, pointB) => {
-      const lengthX = pointB[0] - pointA[0];
-      const lengthY = pointB[1] - pointA[1];
-      return {
-        length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
-        angle: Math.atan2(lengthY, lengthX),
-      };
-    };
-    const smoothing = 0.2;
-    const controlPoint = (current, previous, next, reverse = false) => {
-      const p = previous || current;
-      const n = next || current;
-
-      const o = line(p, n);
-
-      // If is end-control-point, add PI to the angle to go backward
-      const angle = o.angle + (reverse ? Math.PI : 0);
-      const length = o.length * smoothing;
-
-      // The control point position is relative to the current point
-      const x = current[0] + Math.cos(angle) * length;
-      const y = current[1] + Math.sin(angle) * length;
-      return [x, y];
-    };
-    const bezierCommand = (point, i, a) => {
-      // start control point
-      const cps = controlPoint(a[i - 1], a[i - 2], point);
-
-      // end control point
-      const cpe = controlPoint(point, a[i - 1], a[i + 1], true);
-      return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
-    };
-
     let arrowPath = `M ${x1} ${y1}`;
     let p = { x: 0, y: 0 };
     let minPad = 15;
     if (path === 'smooth') {
-      arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
+      // arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
+      arrowPath = smoothBezierPoints([
+        [x1, y1],
+        [x2 - absDx / 2, y1],
+        [x2 - absDx / 2, y2],
+        [x2, y2],
+      ]);
+      // console.log(
+      //   [
+      //     [x1, y1],
+      //     [x2, y2],
+      //   ],
+      //   smoothBezierPoints([
+      //     [x1, y1],
+      //     [x2, y2],
+      //   ])
+      // );
       // cpx1 += absDx;
       // cpx2 -= absDx;
       // if (dx < minPad) {
