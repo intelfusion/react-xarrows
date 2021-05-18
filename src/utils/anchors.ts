@@ -2,7 +2,7 @@
  * utility functions for preparing `startAnchor` and `endAnchor` to accept the diffrent types that can be passed.
  */
 
-import { anchorCustomPositionType, anchorPositionType, anchorType } from '../types';
+import { anchorCustomPositionType, anchorPositionType, anchorSideType, anchorType } from '../types';
 import { typeOf } from './index';
 import { tAnchorEdge } from '../index';
 
@@ -15,8 +15,6 @@ const getAnchorsDefaultOffsets = (width: number, height: number) => {
     bottom: { rightness: width * 0.5, bottomness: height },
   };
 };
-
-type anchorSideType = 'left' | 'right' | 'top' | 'bottom';
 
 export const prepareAnchorLines = (anchor, anchorPos) => {
   let defsOffsets = getAnchorsDefaultOffsets(anchorPos.right - anchorPos.x, anchorPos.bottom - anchorPos.y);
@@ -65,7 +63,7 @@ export const prepareAnchorLines = (anchor, anchorPos) => {
   return anchorPossibilities.map((pos) => ({
     x: anchorPos.x + pos.offset.rightness,
     y: anchorPos.y + pos.offset.bottomness,
-    anchorPosition: pos.position,
+    anchorName: pos.position as anchorSideType,
   }));
 };
 
@@ -74,19 +72,19 @@ const dist = (p1, p2) => {
   return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
 };
 
-type t1 = { x: number; y: number; anchorPosition: anchorPositionType };
+type t1 = { x: number; y: number; anchorName: anchorSideType };
 
 export const getShortestLine = (sPoints: t1[], ePoints: t1[]) => {
   // closes tPair Of Points which feet to the specified anchors
   let minDist = Infinity,
     d = Infinity;
-  let closestPair: { startPointObj: t1; endPointObj: t1 };
+  let closestPair: { chosenStart: t1; chosenEnd: t1 };
   sPoints.forEach((sp) => {
     ePoints.forEach((ep) => {
       d = dist(sp, ep);
       if (d < minDist) {
         minDist = d;
-        closestPair = { startPointObj: sp, endPointObj: ep };
+        closestPair = { chosenStart: sp, chosenEnd: ep };
       }
     });
   });

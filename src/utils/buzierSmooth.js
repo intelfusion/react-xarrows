@@ -1,17 +1,6 @@
 // The smoothing ratio
 const smoothing = 0.3;
 
-const points = [
-  [5, 10],
-  [10, 40],
-  [40, 30],
-  [60, 5],
-  [90, 45],
-  [120, 10],
-  [150, 45],
-  [200, 10],
-];
-
 // Properties of a line
 // I:  - pointA (array) [x,y]: coordinates
 //     - pointB (array) [x,y]: coordinates
@@ -84,6 +73,49 @@ const svgPath = (points, command) => {
 
 export const smoothBezierPoints = (points) => svgPath(points, bezierCommand);
 
-// const svg = document.querySelector('.svg')
+export const pointsToLines = (points) => {
+  const p1 = points.splice(0, 1)[0];
+  const first = `M ${p1[0]} ${p1[1]}`;
+  return points.reduce((ac, cr) => ac + ` L ${cr[0]} ${cr[1]} `, first);
+};
 
-// console.log(svgPath(points,bezierCommand))
+class Point {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
+class Rectangle {
+  constructor(root = [0, 0], height = 0, width = 0, margin = 10) {
+    this.root = root;
+    this.height = height;
+    this.width = width;
+    this.margin = margin;
+  }
+}
+
+const drawGridLine = (startP, endP, startR, endR) => {};
+
+/**
+ * the possible sides:
+ *      forward
+ *      right
+ *      -forward
+ *      -right
+ *
+ *  the possible connections:
+ *      f => -f
+ *      f => -r
+ *      f => r
+ */
+
+// const testPoints = () => {
+//     const points = [
+//         [0, 0],
+//         [10, 50],
+//     ];
+//     console.log(pointsToLine(points));
+// };
+//
+// testPoints();

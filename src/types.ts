@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { tAnchorEdge, tPaths, tSvgElems, tArrowShapes } from '.';
+
 export type xarrowPropsType = {
   start: refType;
   end: refType;
@@ -92,6 +93,8 @@ export type _prevPosType = {
     bottom: number;
   };
 };
+
+export type anchorSideType = 'left' | 'right' | 'top' | 'bottom';
 
 // pick the common props between 2 objects
 type Common<A, B> = {

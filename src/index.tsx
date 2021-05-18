@@ -3,11 +3,12 @@ import isEqual from 'lodash.isequal';
 import pick from 'lodash.pick';
 import omit from 'lodash.omit';
 import { getElementByPropGiven } from './utils';
-import { smoothBezierPoints } from './utils/buzierSmooth';
+import { pointsToLines, smoothBezierPoints } from './utils/buzierSmooth';
 import PT from 'prop-types';
 import { buzzierMinSols, bzFunction } from './utils/buzzier';
 import { getShortestLine, prepareAnchorLines } from './utils/anchors';
 import { _prevPosType, labelsType, svgCustomEdgeType, svgEdgeShapeType, xarrowPropsType } from './types';
+import { Dir, EAD, SAD } from './utils/paths';
 
 export type { labelsType, svgCustomEdgeType, svgEdgeShapeType, xarrowPropsType };
 
@@ -314,12 +315,12 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let endPoints = prepareAnchorLines(endAnchor, ePos);
 
     // choose the smallest path for 2 ponts from these possibilities.
-    let { startPointObj, endPointObj } = getShortestLine(startPoints, endPoints);
+    let { chosenStart, chosenEnd } = getShortestLine(startPoints, endPoints);
 
-    let startAnchorPosition = startPointObj.anchorPosition,
-      endAnchorPosition = endPointObj.anchorPosition;
-    let startPoint = pick(startPointObj, ['x', 'y']),
-      endPoint = pick(endPointObj, ['x', 'y']);
+    let startAnchorName = chosenStart.anchorName,
+      endAnchorName = chosenEnd.anchorName;
+    let startPoint = pick(chosenStart, ['x', 'y']),
+      endPoint = pick(chosenEnd, ['x', 'y']);
 
     headShape = headShape as svgCustomEdgeType;
     tailShape = tailShape as svgCustomEdgeType;
@@ -333,6 +334,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let absDy = Math.abs(dy);
     let xSign = dx > 0 ? 1 : -1;
     let ySign = dy > 0 ? 1 : -1;
+    let xRev = dx < 0 ? 1 : 0;
+    let yRev = dy < 0 ? 1 : 0;
     let [headOffset, tailOffset] = [headShape.offsetForward, tailShape.offsetForward];
     let fHeadSize = headSize * strokeWidth; //factored head size
     let fTailSize = tailSize * strokeWidth; //factored head size
@@ -372,12 +375,12 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
     ////////////////////////////////////
     // arrow point to point calculations
-    let x1 = excLeft,
-      x2 = absDx + excLeft,
-      y1 = excUp,
-      y2 = absDy + excUp;
-    if (dx < 0) [x1, x2] = [x2, x1];
-    if (dy < 0) [y1, y2] = [y2, y1];
+    let x1 = excLeft + xRev * -dx,
+      x2 = absDx + excLeft + xRev * dx,
+      y1 = excUp + yRev * -dy,
+      y2 = absDy + excUp + yRev * dy;
+    // if (dx < 0) [x1, x2] = [x2, x1];
+    // if (dy < 0) [y1, y2] = [y2, y1];
 
     let cpx1 = x1 + _cpx1Offset,
       cpy1 = y1 + _cpy1Offset,
@@ -387,63 +390,85 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let arrowHeadOffset = { x: xHeadOffset, y: yHeadOffset };
     let arrowTailOffset = { x: xTailOffset, y: yTailOffset };
 
-    const startDir = {
-        forward: 0,
-        rightness: 0,
-      },
-      endDir = {
-        forward: 0,
-        rightness: 0,
-      };
-
     let arrowPath = `M ${x1} ${y1}`;
     let p = { x: 0, y: 0 };
     let minPad = 15;
-    if (path === 'smooth') {
-      // arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
-      arrowPath = smoothBezierPoints([
-        [x1, y1],
-        [x2 - absDx / 2, y1],
-        [x2 - absDx / 2, y2],
-        [x2, y2],
-      ]);
-      // console.log(
-      //   [
-      //     [x1, y1],
-      //     [x2, y2],
-      //   ],
-      //   smoothBezierPoints([
-      //     [x1, y1],
-      //     [x2, y2],
-      //   ])
-      // );
-      // cpx1 += absDx;
-      // cpx2 -= absDx;
-      // if (dx < minPad) {
-      //   let dHe = startHeight / 2 + (absDy - startHeight / 2 - endHeight / 2) / 2;
-      //   // let dHe = startHeight / 2 + 15;
-      //   arrowPath += `c ${minPad} ${0}, ${minPad} ${dHe}, ${minPad / 2} ${dHe}`;
-      //   arrowPath += `c ${dx - minPad} ${0}, ${dx - minPad} ${absDy - dHe}, ${dx - minPad / 2} ${absDy - dHe}`;
-      // } else {
-      //   arrowPath += `c ${absDx} ${0}, ${0} ${dy}, ${dx} ${dy}`;
-      // }
-      // console.log(cpx1);
-      // arrowPath += `T ${cpx1} ${cpy1} ${x2} ${y2}`;
-      // // works fine
-      // cpx1 += absDx / 2 + strokeWidth;
-      // cpx2 -= absDx / 2 + strokeWidth;
-      // if (dx < 0) {
-      //   cpy1 += Math.min(dy, Math.min(absDx * 2, startHeight * 2));
-      //   cpy2 -= Math.min(absDx * 2, endHeight * 2) * ySign;
-      //   if (absDy / 2 < startHeight / 2) {
-      //     // cpy2 += startHeight * ySign;
-      //     // cpx2 -= endWidth * xSign;
-      //     console.log('!');
-      //   }
-      // }
-    } else if (path === 'grid') {
-    } else if (path === 'straight') {
+    const points = [[x1, y1]];
+    const endP = [x2, y2];
+
+    const startDir = SAD[chosenStart.anchorName];
+    const endDir = EAD[chosenEnd.anchorName];
+    const dirsSigns = {
+      U: -ySign,
+      R: xSign,
+      D: -ySign,
+      L: xSign,
+    };
+
+    const dirsSize = {
+      U: -dy,
+      R: dx,
+      D: dy,
+      L: -dx,
+    };
+
+    let df = dirsSize[startDir]; //diff forward
+    let dr = dirsSize[Dir.dirs[startDir].clockwise().label]; //diff rightwards
+    let fSign = dirsSigns[startDir];
+    let rSign = dirsSigns[Dir.dirs[startDir].clockwise().label]; //diff rightwards
+    let absDf = Math.abs(df);
+    let absDr = Math.abs(dr);
+
+    if (Dir.dirs[startDir] === Dir.dirs[endDir]) {
+      // 2 control points
+      let cp = [x1, y1];
+      cp = Dir.dirs[startDir].add(cp, minPad);
+      points.push(cp);
+      if (df < minPad) {
+        cp = Dir.dirs[startDir]
+          .clockwise()
+          .add(cp, (startHeight / 2 + (absDr - startHeight / 2 - endHeight / 2) / 2) * rSign);
+        points.push(cp);
+      } else {
+        cp = Dir.dirs[startDir].add(cp, df / 2);
+        points.push(cp);
+        cp = Dir.dirs[startDir].clockwise().add(cp, dr);
+        points.push(cp);
+      }
+      // console.log('hey!', Dir.dirs[startDir].add([x1, y1], minPad));
+
+      cp = Dir.dirs[endDir].reverse().add(endP, minPad);
+      points.push(cp);
+      // points.push([x1 + dx / 2, y1]);
+      // points.push([x1 + dx / 2, y2]);
+    } else if (Dir.dirs[startDir] === Dir.dirs[endDir].reverse().clockwise()) {
+      // 1 control points
+      points.push([x1 + dx, y1]);
+    } else if (Dir.dirs[startDir] === Dir.dirs[endDir].reverse()) {
+      // 3 control points
+      points.push([x1 + dx + minPad, y1]);
+      points.push([x1 + dx + minPad, y2]);
+    } else {
+      throw Error('not possible state');
     }
+    points.push(endP);
+    arrowPath = pointsToLines(points);
+    // console.log(arrowPath);
+
+    // if (path === 'smooth') {
+    //   // arrowPath = `M ${x1} ${y1} L ${x2} ${y2}`;
+    //   // arrowPath = `M ${x1} ${y1} L  ${cpx1} ${cpy1} L ${cpx2} ${cpy2} ${x2} ${y2}`;
+    // } else if (path === 'grid') {
+    // } else if (path === 'straight') {
+    // }
+
+    // // arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
+    // arrowPath = smoothBezierPoints([
+    //   [x1, y1],
+    //   [x2 - absDx / 2, y1],
+    //   [x2 - absDx / 2, y2],
+    //   [x2, y2],
+    // ]);
 
     // if (path === 'grid') {
     //   // todo: support gridRadius
@@ -491,22 +516,22 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     //   }
     // } else {
     //   // in case of smooth path
-    //   if (endAnchorPosition === 'middle') {
+    //   if (endAnchorName === 'middle') {
     //     // in case a middle anchor is chosen for endAnchor choose from which side to attach to the middle of the element
     //     if (absDx > absDy) {
-    //       endAnchorPosition = xSign ? 'left' : 'right';
+    //       endAnchorName = xSign ? 'left' : 'right';
     //     } else {
-    //       endAnchorPosition = ySign ? 'top' : 'bottom';
+    //       endAnchorName = ySign ? 'top' : 'bottom';
     //     }
     //   }
     //   if (showHead) {
-    //     if (['left', 'right'].includes(endAnchorPosition)) {
+    //     if (['left', 'right'].includes(endAnchorName)) {
     //       //todo: rotate all transforms(and arrows svg) by 90
     //       //// for 90 deg turn
     //       // xHeadOffset = -fHeadSize + _headOffset * xSign;
     //       // x2 -= fHeadSize * (1 - headOffset) * xSign;
     //       // yHeadOffset = (fHeadSize / 2) * xSign;
-    //       // if (endAnchorPosition === "left") {
+    //       // if (endAnchorName === "left") {
     //       //   headOrient = 90;
     //       // ...
     //
@@ -523,18 +548,18 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     //       // xHeadOffset -= (_headBox.x / (_headBox.height + _headBox.width)) * fHeadSize;
     //       // yHeadOffset = yHeadOffset - (1 - _headBox.height - _headBox.y) * strokeWidth * yHeadOffset;
     //
-    //       if (endAnchorPosition === 'left') {
+    //       if (endAnchorName === 'left') {
     //         headOrient = 0;
     //         if (xSign < 0) headOrient += 180;
     //       } else {
     //         headOrient = 180;
     //         if (xSign > 0) headOrient += 180;
     //       }
-    //     } else if (['top', 'bottom'].includes(endAnchorPosition)) {
+    //     } else if (['top', 'bottom'].includes(endAnchorName)) {
     //       xHeadOffset += (fHeadSize * -ySign) / 2;
     //       yHeadOffset += _headOffset * ySign;
     //       y2 -= fHeadSize * ySign - yHeadOffset;
-    //       if (endAnchorPosition === 'top') {
+    //       if (endAnchorName === 'top') {
     //         headOrient = 270;
     //         if (ySign > 0) headOrient += 180;
     //       } else {
@@ -547,22 +572,22 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     //   }
     // }
     // if (showTail && cu !== 0) {
-    //   if (['left', 'right'].includes(startAnchorPosition)) {
+    //   if (['left', 'right'].includes(startAnchorName)) {
     //     xTailOffset += _tailOffset * -xSign;
     //     x1 += fTailSize * xSign + xTailOffset;
     //     yTailOffset += -(fTailSize * xSign) / 2;
-    //     if (startAnchorPosition === 'left') {
+    //     if (startAnchorName === 'left') {
     //       tailOrient = 180;
     //       if (xSign < 0) tailOrient += 180;
     //     } else {
     //       tailOrient = 0;
     //       if (xSign > 0) tailOrient += 180;
     //     }
-    //   } else if (['top', 'bottom'].includes(startAnchorPosition)) {
+    //   } else if (['top', 'bottom'].includes(startAnchorName)) {
     //     yTailOffset += _tailOffset * -ySign;
     //     y1 += fTailSize * ySign + yTailOffset;
     //     xTailOffset += (fTailSize * ySign) / 2;
-    //     if (startAnchorPosition === 'top') {
+    //     if (startAnchorName === 'top') {
     //       tailOrient = 90;
     //       if (ySign > 0) tailOrient += 180;
     //     } else {
@@ -572,7 +597,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     //   }
     // }
     //
-    // // if (endAnchorPosition == startAnchorPosition) headOrient += 180;
+    // // if (endAnchorName == startAnchorName) headOrient += 180;
     // let arrowHeadOffset = { x: xHeadOffset, y: yHeadOffset };
     // let arrowTailOffset = { x: xTailOffset, y: yTailOffset };
     //
@@ -654,12 +679,12 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     //
     // // smart select best curve for the current anchors
     // let selectedCurviness = '';
-    // if (['left', 'right'].includes(startAnchorPosition)) selectedCurviness += 'h';
-    // else if (['bottom', 'top'].includes(startAnchorPosition)) selectedCurviness += 'v';
-    // else if (startAnchorPosition === 'middle') selectedCurviness += 'm';
-    // if (['left', 'right'].includes(endAnchorPosition)) selectedCurviness += 'h';
-    // else if (['bottom', 'top'].includes(endAnchorPosition)) selectedCurviness += 'v';
-    // else if (endAnchorPosition === 'middle') selectedCurviness += 'm';
+    // if (['left', 'right'].includes(startAnchorName)) selectedCurviness += 'h';
+    // else if (['bottom', 'top'].includes(startAnchorName)) selectedCurviness += 'v';
+    // else if (startAnchorName === 'middle') selectedCurviness += 'm';
+    // if (['left', 'right'].includes(endAnchorName)) selectedCurviness += 'h';
+    // else if (['bottom', 'top'].includes(endAnchorName)) selectedCurviness += 'v';
+    // else if (endAnchorName === 'middle') selectedCurviness += 'm';
     // if (absDx > absDy) selectedCurviness = selectedCurviness.replace(/m/g, 'h');
     // else selectedCurviness = selectedCurviness.replace(/m/g, 'v');
     // curvesPossibilities[selectedCurviness]();
@@ -702,13 +727,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     const labelMiddlePos = { x: bzx(0.5), y: bzy(0.5) };
     const labelEndPos = { x: bzx(0.99), y: bzy(0.99) };
     const arrowEnd = { x: bzx(1), y: bzy(1) };
-
-    // if (path === 'grid') {
-    //   // todo: support gridRadius
-    //   //  arrowPath = `M ${x1} ${y1} L  ${cpx1 - 10} ${cpy1} a10,10 0 0 1 10,10
-    //   // L ${cpx2} ${cpy2 - 10} a10,10 0 0 0 10,10 L  ${x2} ${y2}`;
-    //   arrowPath = `M ${x1} ${y1} L  ${cpx1} ${cpy1} L ${cpx2} ${cpy2} ${x2} ${y2}`;
-    // } else if (path === 'smooth') arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
 
     setSt({
       cx0,
@@ -1057,7 +1075,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     </div>
   );
 };
-
 //////////////////////////////
 // propTypes
 

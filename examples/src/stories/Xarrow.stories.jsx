@@ -100,8 +100,8 @@ export const CustomSimple = (ar) => <DraggableTemplate {...ar} />;
 CustomSimple.args = {
   box1: { height: 150, width: 100 },
   box2: { height: 30, width: 100 },
-  startAnchor: 'right',
-  endAnchor: 'left',
+  startAnchor: 'bottom',
+  endAnchor: 'top',
   label: null,
   color: 'CornflowerBlue',
   lineColor: null,
