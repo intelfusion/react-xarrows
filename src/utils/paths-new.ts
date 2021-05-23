@@ -35,6 +35,4 @@ class Rectangle {
 
 const rect = new Rectangle(new Point(0, 5), new Point(30, 20));
 
-const main = (sp: Point, ep = Point, rects: Rectangle[] = []) => {
-
-};
+const main = (sp: Point, ep = Point, rects: Rectangle[] = []) => {};
