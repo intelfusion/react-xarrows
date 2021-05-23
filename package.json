@@ -17,7 +17,6 @@
     "elements",
     "element"
   ],
-  "type": "module",
   "main": "lib/index.js",
   "module": "lib/index.js",
   "types": "lib",
