@@ -1,6 +1,22 @@
 // @ts-ignore
 import { number } from 'prop-types';
 
+const operatorFunc = (p: Vector, p2: Vector | number, operator) => {
+  let _p2;
+  if (typeof p2 === 'number') _p2 = { x: p2, y: p2 };
+  else _p2 = p2;
+  return new Vector(operator(p.x, _p2.x), operator(p.y, _p2.y));
+};
+
+const operators = {
+  add: (x, y) => x + y,
+  sub: (x, y) => x - y,
+  mul: (x, y) => x * y,
+  dev: (x, y) => x / y,
+};
+
+const pathMargin = 25;
+
 export class Vector {
   x: number;
   y: number;
@@ -12,33 +28,30 @@ export class Vector {
 
   eq = (p: Vector) => p.x === this.x && p.y === this.y;
 
-  add = (p: Vector) => new Vector(this.x + p.x, this.y + p.y);
-  sub = (p: Vector) => new Vector(this.x - p.x, this.y - p.y);
-  dev = (p: Vector | number) => {
-    let _p;
-    if (typeof p === 'number') _p = { x: p, y: p };
-    else _p = p;
-    return new Vector(this.x / _p.x, this.y / _p.y);
-  };
-  mul = (p: Vector) => new Vector(this.x * p.x, this.y * p.y);
+  add = (p: Vector | number) => operatorFunc(this, p, operators.add);
+  sub = (p: Vector | number) => operatorFunc(this, p, operators.sub);
+  mul = (p: Vector | number) => operatorFunc(this, p, operators.mul);
+  dev = (p: Vector | number) => operatorFunc(this, p, operators.dev);
+
   dir = () => new Dir(this.x, this.y);
 }
 
 /**
  * normalized direction
  */
-class Dir {
-  private readonly x: number;
-  private readonly y: number;
+class Dir extends Vector {
+  // private readonly x: number;
+  // private readonly y: number;
 
   constructor(xDiff, yDiff) {
     let m = Math.max(Math.abs(xDiff), Math.abs(yDiff));
     if (m == 0) m = 1;
-    this.x = xDiff / m;
-    this.y = yDiff / m;
+    super(xDiff / m, yDiff / m);
+    // this.x = xDiff / m;
+    // this.y = yDiff / m;
   }
 
-  eq = (p: Dir) => p.x === this.x && p.y === this.y;
+  // eq = (p: Dir) => p.x === this.x && p.y === this.y;
 }
 
 // // diff between points
@@ -83,6 +96,7 @@ class LinesList {
     this.add(...vectors);
     // this.lines.push(...vectors);
   }
+
   toList = () => this.vectors.map((v) => [v.x, v.y]);
 }
 
@@ -116,7 +130,7 @@ class GridLine extends LinesList {
         nextEd = nextL.xDiff().dir();
       } else {
         // console.log(sd, ed, l.dir());
-        console.warn('???????????????? THIS SHOULD NOT BE PRINTED ?????????????????');
+        console.warn('??? THIS SHOULD NOT BE PRINTED ???');
         return;
       }
       let nextControlP = new GridLine(sp, sd, nextP, nextEd).vectors[0];
@@ -176,25 +190,41 @@ const EAD = {
   left: 'R',
 } as const;
 
+class SmartGrid extends LinesList {
+  constructor(sp: Vector, sd: Dir, ep: Vector, ed: Dir, rects: Rectangle[] = []) {
+    super(sp);
+    const postStart = sp.add(sd.mul(pathMargin));
+    this.add(postStart);
+    const preEp = ep.add(ed.mul(-pathMargin));
+    this.add(...new GridLine(sp, sd, ep, ed).add(preEp, ep).vectors);
+  }
+}
+
 export const calcSmartPath = (sp: Vector, sd: sidesType, ep: Vector, ed: sidesType, rects: Rectangle[] = []) => {
   // start anchor direction
   let sdd = dirs[SAD[sd]];
   let edd = dirs[EAD[ed]];
 
-  return new LinesList(sp).add(...new GridLine(sp, sdd, ep, edd).add(ep).vectors).toList();
+  const smartGrid = new SmartGrid(sp, sdd, ep, edd);
+  const points = smartGrid.toList();
+  // console.log(sdd, 'sdd');
+  // ll.add(sp.add(sp.add(pathMargin).mul(sdd)));
+  // const points = ll.add(...new GridLine(sp, sdd, ep, edd).add(ep).vectors).toList();
+  // console.log(JSON.stringify(points));
+  return points;
 };
 
-const test = () => {
-  const testZ = () => {
-    let sp = new Vector(0, 100),
-      ep = new Vector(100, 120);
-
-    let g = calcSmartPath(sp, 'top', ep, 'bottom');
-    // console.log(g);
-  };
-  // testZ();
-};
-test();
+// const test = () => {
+//   const testZ = () => {
+//     let sp = new Vector(0, 100),
+//       ep = new Vector(100, 120);
+//
+//     let g = calcSmartPath(sp, 'top', ep, 'bottom');
+//     // console.log(g);
+//   };
+//   testZ();
+// };
+// test();
 
 // export class Dir {
 //   static refs: { ref?: Dir; reverse?: Dir; clockwise?: Dir } = {};
