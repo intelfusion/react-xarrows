@@ -9,6 +9,7 @@ import { buzzierMinSols, bzFunction } from './utils/buzzier';
 import { getShortestLine, prepareAnchorLines } from './utils/anchors';
 import { _prevPosType, labelsType, svgCustomEdgeType, svgEdgeShapeType, xarrowPropsType } from './types';
 import { Dir, EAD, SAD } from './utils/paths';
+import { calcSmartPath, Vector } from './utils/paths-new';
 
 export type { labelsType, svgCustomEdgeType, svgEdgeShapeType, xarrowPropsType };
 
@@ -372,6 +373,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let excLeft = _calc + Number(_extendSVGcanvas);
     let excUp = _calc + Number(_extendSVGcanvas);
     let excDown = _calc + Number(_extendSVGcanvas);
+    excRight = 50;
+    excLeft = 50;
+    excUp = 50;
+    excDown = 50;
 
     ////////////////////////////////////
     // arrow point to point calculations
@@ -391,67 +396,17 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let arrowTailOffset = { x: xTailOffset, y: yTailOffset };
 
     let arrowPath = `M ${x1} ${y1}`;
-    let p = { x: 0, y: 0 };
-    let minPad = 15;
-    const points = [[x1, y1]];
-    const endP = [x2, y2];
+    let points = calcSmartPath(new Vector(x1, y1), chosenStart.anchorName, new Vector(x2, y2), chosenEnd.anchorName);
+    // console.log(points);
 
-    const startDir = SAD[chosenStart.anchorName];
-    const endDir = EAD[chosenEnd.anchorName];
-    const dirsSigns = {
-      U: -ySign,
-      R: xSign,
-      D: -ySign,
-      L: xSign,
-    };
+    // let p = { x: 0, y: 0 };
+    // let minPad = 15;
+    // const points = [[x1, y1]];
+    // const endP = [x2, y2];
+    //
+    // const startDir = SAD[chosenStart.anchorName];
+    // const endDir = EAD[chosenEnd.anchorName];
 
-    const dirsSize = {
-      U: -dy,
-      R: dx,
-      D: dy,
-      L: -dx,
-    };
-
-    let df = dirsSize[startDir]; //diff forward
-    let dr = dirsSize[Dir.dirs[startDir].clockwise().label]; //diff rightwards
-    let fSign = dirsSigns[startDir];
-    let rSign = dirsSigns[Dir.dirs[startDir].clockwise().label]; //diff rightwards
-    let absDf = Math.abs(df);
-    let absDr = Math.abs(dr);
-
-    if (Dir.dirs[startDir] === Dir.dirs[endDir]) {
-      // 2 control points
-      let cp = [x1, y1];
-      cp = Dir.dirs[startDir].add(cp, minPad);
-      points.push(cp);
-      if (df < minPad) {
-        cp = Dir.dirs[startDir]
-          .clockwise()
-          .add(cp, (startHeight / 2 + (absDr - startHeight / 2 - endHeight / 2) / 2) * rSign);
-        points.push(cp);
-      } else {
-        cp = Dir.dirs[startDir].add(cp, df / 2);
-        points.push(cp);
-        cp = Dir.dirs[startDir].clockwise().add(cp, dr);
-        points.push(cp);
-      }
-      // console.log('hey!', Dir.dirs[startDir].add([x1, y1], minPad));
-
-      cp = Dir.dirs[endDir].reverse().add(endP, minPad);
-      points.push(cp);
-      // points.push([x1 + dx / 2, y1]);
-      // points.push([x1 + dx / 2, y2]);
-    } else if (Dir.dirs[startDir] === Dir.dirs[endDir].reverse().clockwise()) {
-      // 1 control points
-      points.push([x1 + dx, y1]);
-    } else if (Dir.dirs[startDir] === Dir.dirs[endDir].reverse()) {
-      // 3 control points
-      points.push([x1 + dx + minPad, y1]);
-      points.push([x1 + dx + minPad, y2]);
-    } else {
-      throw Error('not possible state');
-    }
-    points.push(endP);
     arrowPath = pointsToLines(points);
     // console.log(arrowPath);
 
@@ -692,19 +647,19 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     ////////////////////////////////////
     // canvas smart size adjustments
     // todo: fix: calc edges size and adjust canvas
-    const [xSol1, xSol2] = buzzierMinSols(x1, cpx1, cpx2, x2);
-    const [ySol1, ySol2] = buzzierMinSols(y1, cpy1, cpy2, y2);
-    if (xSol1 < 0) excLeft += -xSol1;
-    if (xSol2 > absDx) excRight += xSol2 - absDx;
-    if (ySol1 < 0) excUp += -ySol1;
-    if (ySol2 > absDy) excDown += ySol2 - absDy;
-
-    if (path === 'grid') {
-      excLeft += _calc;
-      excRight += _calc;
-      excUp += _calc;
-      excDown += _calc;
-    }
+    // const [xSol1, xSol2] = buzzierMinSols(x1, cpx1, cpx2, x2);
+    // const [ySol1, ySol2] = buzzierMinSols(y1, cpy1, cpy2, y2);
+    // if (xSol1 < 0) excLeft += -xSol1;
+    // if (xSol2 > absDx) excRight += xSol2 - absDx;
+    // if (ySol1 < 0) excUp += -ySol1;
+    // if (ySol2 > absDy) excDown += ySol2 - absDy;
+    //
+    // if (path === 'grid') {
+    //   excLeft += _calc;
+    //   excRight += _calc;
+    //   excUp += _calc;
+    //   excDown += _calc;
+    // }
 
     // x1 += excLeft;
     // x2 += excLeft;
@@ -1075,6 +1030,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     </div>
   );
 };
+
 //////////////////////////////
 // propTypes
 
