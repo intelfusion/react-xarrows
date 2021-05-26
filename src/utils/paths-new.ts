@@ -17,7 +17,7 @@ const operators = {
   dev: (x, y) => x / y,
 };
 
-const pathMargin = 35;
+const pathMargin = 15;
 
 export class Vector {
   x: number;

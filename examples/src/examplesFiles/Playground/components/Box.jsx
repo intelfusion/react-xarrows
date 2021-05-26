@@ -30,9 +30,9 @@ const Box = (props) => {
   } else if (
     (props.actionState === 'Add Connections' &&
       // props.sidePos !== "right" &&
-      props.vectors.filter((line) => line.root === props.selected.id && line.end === props.box.id).length === 0) ||
+      props.lines.filter((line) => line.root === props.selected.id && line.end === props.box.id).length === 0) ||
     (props.actionState === 'Remove Connections' &&
-      props.vectors.filter((line) => line.root === props.selected.id && line.end === props.box.id).length > 0)
+      props.lines.filter((line) => line.root === props.selected.id && line.end === props.box.id).length > 0)
   ) {
     background = 'LemonChiffon';
   }
