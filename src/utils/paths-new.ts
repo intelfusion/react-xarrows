@@ -17,7 +17,7 @@ const operators = {
   dev: (x, y) => x / y,
 };
 
-const pathMargin = 25;
+const pathMargin = 15;
 
 export class Vector {
   x: number;
@@ -155,29 +155,53 @@ const getNextPoint = (sv: Vector, ev: Vector, margin = true): [Vector, Vector, b
 
   // stop condition - if the arrow facing the direction it should go and there is no orthogonal distance to travel
   // if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir) && vf.size() > 0) return [ev, ev];
-  if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir)) return [ev, ev];
+  if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir)) {
+    // if (vf.size() === 0) console.log(vf);
+    // console.log(vf);
+    // if (vf.absSize() < pathMargin) return [sv, ev.add(ev.faceDir.reverse().mul(pathMargin))];
+    return [ev, ev];
+  }
+  // if (vr.size() === 0) console.log(vr);
+
+  // if start point direction is the same as end point direction then it's a Z curve
+  if (sv.faceDir.eq(ev.faceDir)) {
+    console.log('Z curve');
+    return [sv.add(vf.dev(2)).setDir(lred), ev, false];
+  }
 
   if (margin) {
     // add margin after start if needed
-    if (sv.faceDir.eq(dfe.reverse()) || vf.absSize() < pathMargin)
+    if (sv.faceDir.eq(dfe.reverse()) && sv.faceDir.mul(vse).size() < pathMargin) {
       // if (!sv.faceDir.eq(ld) || vf.size() < pathMargin)
+      console.log('start margin');
       return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lred), ev];
+    }
 
     // add margin before end if needed
     let [lpd, lmd] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred]; //choose line parallel to end line direction
-    if (lpd.eq(ev.faceDir.reverse())) return [sv, ev.add(lpd.mul(pathMargin)).setDir(lmd)];
+    if (lpd.abs().eq(ev.faceDir) && vr.size() < pathMargin) {
+      console.log('end margin');
+      return [sv, ev.sub(ev.faceDir.mul(pathMargin)).setDir(lmd)];
+    }
+    // //working
+    // let [lpd, lmd] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred]; //choose line parallel to end line direction
+    // if (lpd.eq(ev.faceDir.reverse())) {
+    //   console.log('!!!');
+    //   return [sv, ev.add(lpd.mul(pathMargin)).setDir(lmd)];
+    // }
 
+    // console.log(lpd);
     // let [lpd, lmd] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred]; //choose line parallel to end line direction
     // if (lpd.eq(ev.faceDir.reverse()) || vr.absSize() < pathMargin)
     //   return [sv, ev.add(ev.faceDir.mul(pathMargin)).setDir(lmd)];
     // if (lr.dir().eq(ev.faceDir.reverse())) return [sv, ev.add(lr.dir().mul(pathMargin)).setDir(lf.dir())];
   }
 
-  // if start point direction is the same as end point direction then it's a Z curve
-  if (sv.faceDir.eq(ev.faceDir)) return [sv.add(vf.dev(2)).setDir(lred), ev, false];
-
-  //else its a normal 90 grid break at the end of current direction
-  return [sv.add(sv.faceDir.mul(absVf)).setDir(lred), ev];
+  //else its a normal 90 grid break at the end of current direction (r curve)
+  {
+    console.log('r curve');
+    return [sv.add(sv.faceDir.mul(absVf)).setDir(lred), ev];
+  }
 };
 
 class Rectangle {
@@ -264,9 +288,9 @@ const test = () => {
     // let sp = new Vector(150, 50),
     //   ep = new Vector(100, 150);
     let sp = new Vector(0, 0),
-      ep = new Vector(50, 0);
+      ep = new Vector(-100, -10);
 
-    let points = calcSmartPath(sp, 'left', ep, 'right');
+    let points = calcSmartPath(sp, 'right', ep, 'top');
     console.log(points);
   };
   testZ();
