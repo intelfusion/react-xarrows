@@ -240,7 +240,7 @@ const CustomizeArrow = () => {
 
   const box2 = {
     id: 'box2',
-    x: 320,
+    x: 70,
     y: 120,
     ref: useRef(null),
   };
@@ -257,7 +257,7 @@ const CustomizeArrow = () => {
   const [curveness, setCurveness] = useState(0.8);
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [startAnchor, setStartAnchor] = useState(['right']);
-  const [endAnchor, setEndAnchor] = useState(['top']);
+  const [endAnchor, setEndAnchor] = useState(['left']);
   const [dashed, setDashed] = useState(false);
   const [animation, setAnimation] = useState(1);
   const [path, setPath] = useState('smooth');

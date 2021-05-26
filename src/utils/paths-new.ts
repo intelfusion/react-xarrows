@@ -17,7 +17,7 @@ const operators = {
   dev: (x, y) => x / y,
 };
 
-const pathMargin = 15;
+const pathMargin = 35;
 
 export class Vector {
   x: number;
@@ -120,6 +120,7 @@ class VectorList extends Array {
 }
 
 const getNextPoint = (sv: Vector, ev: Vector, margin = true): [Vector, Vector, boolean?] => {
+  let _pathMargin = pathMargin;
   let l = new Line(sv, ev);
   // if ((l.dir().x == 0 || l.dir().y == 0) && sv.faceDir.eq(ev.faceDir)) return [ev, ev];
   let vse = l.diff(); // the vector from s to e
@@ -136,14 +137,50 @@ const getNextPoint = (sv: Vector, ev: Vector, margin = true): [Vector, Vector, b
   if (lrd.absSize() === 0) lrd = lfd.mirror();
   let lfed = lfe.dir(),
     lred = lrd;
-  if (vf.absSize() == 0) return [sv.add(ev.faceDir.reverse().mul(pathMargin)).setDir(lrd), ev];
+  if (vf.absSize() == 0) {
+    console.log('sideways margin');
+    // return [sv.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(lrd), ev];
+    return [sv.add(vse.dir().mirror().abs().mul(_pathMargin)).setDir(lrd), ev];
+  }
 
   let absVf = vf.abs();
   let absVr = vr.abs();
 
   // stop condition - if the arrow facing the direction it should go and there is no orthogonal distance to travel
   if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir)) {
+    console.log('path connected');
     return [ev, ev];
+  }
+
+  if (margin) {
+    //choose line parallel to end line direction for later
+    let [lped, loed] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred];
+    if (sv.faceDir.eq(dfe.reverse())) {
+      if (sv.faceDir.mul(vse).size() < _pathMargin) {
+        // start margin because reverse direction
+        console.log('start margin because reverse');
+        return [sv.add(sv.faceDir.mul(_pathMargin)).setDir(lred), ev];
+      }
+      // } else if (sv.faceDir.mul(vf.size()).size() < _pathMargin) {
+    } else if (dfe.mul(vf).absSize() < _pathMargin) {
+      // start margin because a forward direction to small
+      console.log('start margin because small');
+      let vNext = sv.add(sv.faceDir.mul(_pathMargin)).setDir(lred);
+      // if the target point is closer then _pathMargin from vNext add more margin so the line would become r curve instead of z on next run
+      let NextNextDiff = ev.sub(vNext).mul(lped).absSize();
+      if (NextNextDiff < _pathMargin) {
+        vNext = vNext.add(sv.faceDir.mul(_pathMargin - NextNextDiff));
+      }
+      // ev.sub(vNext).mul(lped).absSize();
+      return [vNext, ev];
+    }
+
+    // add margin before end if needed
+    // if (ev.faceDir.eq(lped.reverse()) && vr.size() < _pathMargin) {
+    if (ev.faceDir.eq(lped.reverse())) {
+      console.log('end margin');
+      return [sv, ev.sub(ev.faceDir.mul(_pathMargin)).setDir(loed)];
+    }
   }
 
   // if start point direction is the same as end point direction then it's a Z curve
@@ -151,38 +188,6 @@ const getNextPoint = (sv: Vector, ev: Vector, margin = true): [Vector, Vector, b
     console.log('Z curve');
     return [sv.add(vf.dev(2)).setDir(lred), ev, false];
   }
-
-  // if (margin) {
-  //   // add margin after start if needed
-  //   // console.log(vf.absSize(), vse.absSize());
-  //   // if(vf)
-  //   // if (sv.faceDir.eq(dfe.reverse()) && sv.faceDir.mul(vse).absSize() < pathMargin) {
-  //   // if (sv.faceDir.eq(dfe.reverse()) && sv.faceDir.mul(vse).absSize() < pathMargin) {
-  //   //   console.log('start margin');
-  //   //   return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lred), ev];
-  //   // }
-  //   if (sv.faceDir.eq(dfe.reverse())) {
-  //     if (sv.faceDir.mul(vse).size() < pathMargin) {
-  //       // start margin because reverse direction
-  //       console.log('start margin because reverse');
-  //       return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lred), ev];
-  //     }
-  //     // } else if (sv.faceDir.mul(vf.size()).size() < pathMargin) {
-  //   } else if (dfe.mul(vf).size() < pathMargin) {
-  //     // start margin because a forward direction to small
-  //     console.log('start margin because small');
-  //     let vNext = sv.add(sv.faceDir.mul(pathMargin)).setDir(lred);
-  //     // if the target point
-  //     return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lred), ev];
-  //   }
-  //
-  //   // add margin before end if needed
-  //   let [lpd, lmd] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred]; //choose line parallel to end line direction
-  //   if (lpd.abs().eq(ev.faceDir) && vr.size() < pathMargin) {
-  //     console.log('end margin');
-  //     return [sv, ev.sub(ev.faceDir.mul(pathMargin)).setDir(lmd)];
-  //   }
-  // }
 
   //else its a normal 90 grid break at the end of current direction (r curve)
   console.log('r curve');
@@ -258,7 +263,7 @@ export const calcSmartPath = (sp: Vector, sd: sidesType, ep: Vector, ed: sidesTy
 
   const smartGrid = new SmartGrid(new Vector(sp, sdd), new Vector(ep, edd));
   const points = smartGrid.getPoints();
-  console.log(points);
+  // console.log(points);
   return points;
 };
 
@@ -268,10 +273,10 @@ const test = () => {
     //   ep = new Vector(10, 100);
     // let sp = new Vector(150, 50),
     //   ep = new Vector(100, 150);
-    let sp = new Vector(100, 10),
-      ep = new Vector(0, 0);
+    let sp = new Vector(0, 0),
+      ep = new Vector(50, 50);
 
-    let points = calcSmartPath(sp, 'right', ep, 'top');
+    let points = calcSmartPath(sp, 'right', ep, 'right');
     console.log(points);
   };
   testZ();
