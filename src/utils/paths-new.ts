@@ -1,5 +1,6 @@
 // @ts-ignore
 import { number } from 'prop-types';
+import pick from 'lodash.pick';
 
 // type VectType = Vector|DVector
 const operatorFunc = (p: Vector, p2: Vector | number, operator) => {
@@ -44,7 +45,8 @@ export class Vector {
   mul = (p: Vector | number) => operatorFunc(this, p, operators.mul);
   dev = (p: Vector | number) => operatorFunc(this, p, operators.dev);
 
-  size = () => Math.sqrt(this.x ** 2 + this.y ** 2);
+  absSize = () => Math.sqrt(this.x ** 2 + this.y ** 2);
+  size = () => this.x + this.y;
   abs = () => new Vector(Math.abs(this.x), Math.abs(this.y));
 
   dir = () => new Dir(this.x, this.y);
@@ -119,150 +121,64 @@ class VectorList extends Array {
 
 const getNextPoint = (sv: Vector, ev: Vector, margin = true): [Vector, Vector, boolean?] => {
   let l = new Line(sv, ev);
-  if ((l.dir().x == 0 || l.dir().y == 0) && sv.faceDir.eq(ev.faceDir)) return [ev, ev];
+  // if ((l.dir().x == 0 || l.dir().y == 0) && sv.faceDir.eq(ev.faceDir)) return [ev, ev];
   let vse = l.diff(); // the vector from s to e
   let dfe = new Dir(sv.faceDir.abs().mul(vse));
   let vf = sv.faceDir.mul(vse.abs()); // the forward vector from the arrow point of view(takes into account everthing)
-  let vr = vse.sub(sv.faceDir.abs().mul(vse)); // the orthogonal direction for forward that taking closer to the target point
-  if (Math.abs(vr.x) > 0 && Math.abs(vr.y) > 0) console.warn('??????'); //debug
+  let vr = vse.sub(sv.faceDir.abs().mul(vse));
   let vfe = sv.faceDir.abs().mul(vse); // forward parallel to start dir at the direction for target point
   let lf = new Line(sv, sv.add(vf));
   let lr = new Line(sv, sv.add(vr));
   let lfe = new Line(sv, sv.add(vfe));
   let lre = lr;
+  let lfd = lf.dir(),
+    lrd = lr.dir();
+  if (lrd.absSize() === 0) lrd = lfd.mirror();
+  let lfed = lfe.dir(),
+    lred = lrd;
+  if (vf.absSize() == 0) return [sv.add(ev.faceDir.reverse().mul(pathMargin)).setDir(lrd), ev];
+
+  // if (vr.size() == 0) {
+  //   console.log('vr=0', pick(lfd, ['x', 'y']), pick(dfe, ['x', 'y']));
+  // }
+  // the orthogonal direction for forward that taking closer to the target point
+  if (Math.abs(vr.x) > 0 && Math.abs(vr.y) > 0) console.warn('??????'); //debug
 
   let absVf = vf.abs();
   let absVr = vr.abs();
 
-  // add margin after start if needed
-  // if (sv.faceDir.eq(lf.dir().reverse()) || vf.size() < pathMargin)
-  //   return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lr.dir()), ev];
-  // if (vf.size() < pathMargin) return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lr.dir()), ev];
+  // if (sv.faceDir.eq(lfd.reverse()) || vf.size() < pathMargin)
+  //   return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lrd), ev];
+  // if (vf.size() < pathMargin) return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lrd), ev];
 
   // let dfe = sv.faceDir.abs().mul(vse)
 
-  if (margin)
-    if (sv.faceDir.eq(dfe.reverse()) || vf.size() < pathMargin)
-      // if (!sv.faceDir.eq(l.dir()) || vf.size() < pathMargin)
-      return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lre.dir()), ev];
+  // stop condition - if the arrow facing the direction it should go and there is no orthogonal distance to travel
+  // if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir) && vf.size() > 0) return [ev, ev];
+  if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir)) return [ev, ev];
 
-  // add margin before end if needed
-  let [lp, lm] = ev.faceDir.absEq(lre.dir()) ? [lre, lfe] : [lfe, lre]; //choose line parallel to end line direction
-  if (lp.dir().eq(ev.faceDir.reverse())) return [sv, ev.add(lp.dir().mul(pathMargin)).setDir(lm.dir())];
-  // if (lr.dir().eq(ev.faceDir.reverse())) return [sv, ev.add(lr.dir().mul(pathMargin)).setDir(lf.dir())];
+  if (margin) {
+    // add margin after start if needed
+    if (sv.faceDir.eq(dfe.reverse()) || vf.absSize() < pathMargin)
+      // if (!sv.faceDir.eq(ld) || vf.size() < pathMargin)
+      return [sv.add(sv.faceDir.mul(pathMargin)).setDir(lred), ev];
+
+    // add margin before end if needed
+    let [lpd, lmd] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred]; //choose line parallel to end line direction
+    if (lpd.eq(ev.faceDir.reverse())) return [sv, ev.add(lpd.mul(pathMargin)).setDir(lmd)];
+
+    // let [lpd, lmd] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred]; //choose line parallel to end line direction
+    // if (lpd.eq(ev.faceDir.reverse()) || vr.absSize() < pathMargin)
+    //   return [sv, ev.add(ev.faceDir.mul(pathMargin)).setDir(lmd)];
+    // if (lr.dir().eq(ev.faceDir.reverse())) return [sv, ev.add(lr.dir().mul(pathMargin)).setDir(lf.dir())];
+  }
 
   // if start point direction is the same as end point direction then it's a Z curve
-  if (sv.faceDir.eq(ev.faceDir)) return [sv.add(vf.dev(2)).setDir(lre.dir()), ev, false];
+  if (sv.faceDir.eq(ev.faceDir)) return [sv.add(vf.dev(2)).setDir(lred), ev, false];
 
   //else its a normal 90 grid break at the end of current direction
-  return [sv.add(sv.faceDir.mul(absVf)).setDir(lre.dir()), ev];
-
-  // console.log(sv.faceDir.mul(vse));
-  // let m = sv.faceDir.mul(vse).size();
-  // if (m < pathMargin) {
-  //   return sv.faceDir.mul(pathMargin).setDir();
-  // }
-  // if (sv.faceDir.eq(lx.dir()) && ev.faceDir.eq(ly.dir())) {
-  //   let next = new Vector(vx, ly.dir());
-  //   let len = l.xDiff().size();
-  //   if (len < pathMargin) {
-  //     next = next.add(lx.dir().mul(pathMargin - len));
-  //   }
-  //   return next;
-  // }
-  // if (sv.faceDir.eq(ly.dir()) && ev.faceDir.eq(lx.dir())) {
-  //   return new Vector(vy, ev.faceDir);
-  //   // return new Vector(vy, lx.dir());
-  // }
-  // // if (!sv.faceDir.eq(lx.dir())) {
-  // //   return sv.add(sv.faceDir.mul(pathMargin));
-  // // }
-  //
-  // // its z path
-  // let nextP = sv.add(l.diff().dev(2));
-  // let nextL = new Line(sv, nextP);
-  // let nextEd;
-  // // console.log(sd, ed, nextL.xDiff().dir(), nextL.yDiff().dir());
-  // if (sv.faceDir.eq(lx.dir()) && ev.faceDir.eq(lx.dir())) {
-  //   nextEd = nextL.yDiff().dir();
-  // } else if (sv.faceDir.eq(ly.dir()) && ev.faceDir.eq(ly.dir())) {
-  //   nextEd = nextL.xDiff().dir();
-  // } else {
-  //   // console.log(sd, ed, l.dir());
-  //   console.warn('??? THIS SHOULD NOT BE PRINTED ???');
-  //   return;
-  // }
-  // return getNextPoint(sv, new Vector(nextP, nextEd));
-  // return getNextPoint(sv, new Vector(nextP, nextEd));
+  return [sv.add(sv.faceDir.mul(absVf)).setDir(lred), ev];
 };
-
-// const getNextPoint = (sv: Vector, ev: Vector, startMargin = true, endMargin = false) => {
-//   let l = new Line(sv, ev);
-//   if ((l.dir().x == 0 || l.dir().y == 0) && sv.faceDir.eq(ev.faceDir)) return ev;
-//   let vx = sv.add(l.xDiff());
-//   let vy = sv.add(l.yDiff());
-//   // console.log(l.size,vx.size(),vy.size())
-//   let lx = new Line(sv, vx);
-//   let ly = new Line(sv, vy);
-//   console.log(sv.faceDir.mul(l.diff()));
-//   let m = sv.faceDir.mul(l.diff()).size();
-//   if (m < pathMargin) {
-//     return sv.faceDir.mul(pathMargin).setDir();
-//   }
-//   if (sv.faceDir.eq(lx.dir()) && ev.faceDir.eq(ly.dir())) {
-//     let next = new Vector(vx, ly.dir());
-//     let len = l.xDiff().size();
-//     if (len < pathMargin) {
-//       next = next.add(lx.dir().mul(pathMargin - len));
-//     }
-//     return next;
-//   }
-//   if (sv.faceDir.eq(ly.dir()) && ev.faceDir.eq(lx.dir())) {
-//     return new Vector(vy, ev.faceDir);
-//     // return new Vector(vy, lx.dir());
-//   }
-//   // if (!sv.faceDir.eq(lx.dir())) {
-//   //   return sv.add(sv.faceDir.mul(pathMargin));
-//   // }
-//
-//   // its z path
-//   let nextP = sv.add(l.diff().dev(2));
-//   let nextL = new Line(sv, nextP);
-//   let nextEd;
-//   // console.log(sd, ed, nextL.xDiff().dir(), nextL.yDiff().dir());
-//   if (sv.faceDir.eq(lx.dir()) && ev.faceDir.eq(lx.dir())) {
-//     nextEd = nextL.yDiff().dir();
-//   } else if (sv.faceDir.eq(ly.dir()) && ev.faceDir.eq(ly.dir())) {
-//     nextEd = nextL.xDiff().dir();
-//   } else {
-//     // console.log(sd, ed, l.dir());
-//     console.warn('??? THIS SHOULD NOT BE PRINTED ???');
-//     return;
-//   }
-//   return getNextPoint(sv, new Vector(nextP, nextEd));
-//   // return getNextPoint(sv, new Vector(nextP, nextEd));
-// };
-
-// let sPathSize = new Line(sp, vf).diff().size();
-// let ePathSize = new Line(vf, ep).diff().size();
-// if (startMargin && sPathSize < pathMargin) {
-//   // console.log(vf, df.dir());
-//   let pNext = sp.add(df.mul(pathMargin));
-//   this.add(pNext);
-//   // console.log(...new GridLine(pNext, new Line(pNext, ep).dir(), ep, ed).vectors);
-//   let nextL = new Line(pNext, ep);
-//   let _nextDir = nextL.dir();
-//   let nextDir = nextL.xDiff().dir();
-//   if (Math.abs(_nextDir.y) > Math.abs(_nextDir.x)) nextDir = nextL.yDiff().dir();
-//   this.add(...new GridLine(pNext, nextDir, ep, ed).vectors);
-//   return;
-// }
-// if (startMargin && sPathSize < pathMargin) {
-//   let pNext = sp.add(df.mul(pathMargin));
-//
-//   this.add(pNext);
-//   return;
-// }
 
 class Rectangle {
   left: Line;
@@ -303,14 +219,10 @@ const EAD = {
 } as const;
 
 class SmartGrid {
-  private current: Vector;
-  private target: Vector;
-
   private starts: VectorList = new VectorList();
   private ends: VectorList = new VectorList();
 
   constructor(sv: Vector, ev: Vector, rects: Rectangle[] = []) {
-    // let lastCur =sv,lastTar = ev
     this.starts.push(sv);
     this.ends.push(ev);
     let lastCur = this.starts[this.starts.length - 1],
@@ -326,11 +238,6 @@ class SmartGrid {
       lastTar = this.ends[this.ends.length - 1];
       // this.add(this.current);
     }
-    // console.log(this.print());
-    // const postStart = sp.add(sd.mul(pathMargin));
-    // this.add(postStart);
-    // const preEp = ep.add(ed.mul(-pathMargin));
-    // this.add(...new GridLine(sp, sd, ep, ed).add(ep).vectors);
   }
 
   getPoints = () => [...this.starts.toList(), ...this.ends.rev().toList()];
@@ -347,7 +254,6 @@ export const calcSmartPath = (sp: Vector, sd: sidesType, ep: Vector, ed: sidesTy
   // ll.add(sp.add(sp.add(pathMargin).mul(sdd)));
   // const points = ll.add(...new GridLine(sp, sdd, ep, edd).add(ep).vectors).toList();
   // console.log(JSON.stringify(points));
-  // console.log(points);
   return points;
 };
 
@@ -358,9 +264,9 @@ const test = () => {
     // let sp = new Vector(150, 50),
     //   ep = new Vector(100, 150);
     let sp = new Vector(0, 0),
-      ep = new Vector(-50, 100);
+      ep = new Vector(50, 0);
 
-    let points = calcSmartPath(sp, 'right', ep, 'top');
+    let points = calcSmartPath(sp, 'left', ep, 'right');
     console.log(points);
   };
   testZ();
