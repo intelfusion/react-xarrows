@@ -98,9 +98,9 @@ const DraggableTemplate = ({ box1: box1Style, box2: box2Style, ...xarrowProps })
 export const CustomSimple = (ar) => <DraggableTemplate {...ar} />;
 
 CustomSimple.args = {
-  box1: { height: 150, width: 100 },
-  box2: { height: 30, width: 100 },
-  startAnchor: 'bottom',
+  box1: { height: 150, width: 60 },
+  box2: { height: 90, width: 80 },
+  startAnchor: 'right',
   endAnchor: 'top',
   label: null,
   color: 'CornflowerBlue',
@@ -159,6 +159,83 @@ gridBreak.args = {
   endAnchor: 'right',
   gridBreak: 0.5,
   arrowBodyProps: {},
+};
+
+const DraggableBox2 = ({ id, forceRerender, style = {} }) => {
+  return (
+    <Draggable onDrag={forceRerender} onStop={forceRerender}>
+      <div id={id} style={{ ...boxStyle, position: 'relative', ...style }}>
+        {id}
+      </div>
+    </Draggable>
+  );
+};
+
+const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
+  const [, setRender] = useState({});
+  const forceRerender = () => setRender({});
+  let boxNum = -1;
+  const states = ['right', 'left', 'bottom', 'top'];
+  // const states = ['right'];
+  return (
+    <div style={{ ...canvasStyle, position: 'absolute', flexWrap: 'wrap' }} id="canvas">
+      {states.map((st) =>
+        states.map((st2) => {
+          boxNum += 2;
+          return (
+            <div
+              style={{
+                ...canvasStyle,
+                alignItems: 'center',
+                justifyContent: 'space-evenly',
+                width: 250,
+                height: 100,
+                border: '2px solid black',
+                position: 'relative',
+              }}
+              key={st + st2}>
+              <div style={{ position: 'absolute', left: 0, top: 0 }}>
+                {st} -> {st2}
+              </div>
+              <DraggableBox2 id={boxNum} forceRerender={forceRerender} style={{ ...boxStyle }} />
+              <DraggableBox2 id={boxNum + 1} forceRerender={forceRerender} style={{ ...boxStyle }} />
+              {/*<Xarrow*/}
+              {/*  start={String(boxNum)}*/}
+              {/*  end={String(boxNum + 1)}*/}
+              {/*  {...xarrowProps}*/}
+              {/*  startAnchor={st}*/}
+              {/*  endAnchor={st2}*/}
+              {/*/>*/}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+};
+
+export const AllStates = (ar) => <AllStatesTemplate {...ar} />;
+AllStates.args = {
+  box: { height: 30, width: 50 },
+  label: null,
+  color: 'CornflowerBlue',
+  lineColor: null,
+  headColor: null,
+  tailColor: null,
+  strokeWidth: 4,
+  showHead: true,
+  headSize: 6,
+  showTail: false,
+  tailSize: 6,
+  path: 'smooth',
+  curveness: 0.8,
+  gridBreak: 0.5,
+  dashness: false,
+  headShape: 'arrow1',
+  tailShape: 'arrow1',
+  animateDrawing: false,
+  showXarrow: true,
+  _debug: false,
 };
 
 export default {
