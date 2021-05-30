@@ -137,17 +137,18 @@ const getNextPoint = (sv: Vector, ev: Vector, margin = true): [Vector, Vector, b
   if (lrd.absSize() === 0) lrd = lfd.mirror();
   let lfed = lfe.dir(),
     lred = lrd;
+
+  let absVf = vf.abs();
+  let absVr = vr.abs();
+
   if (vf.absSize() == 0) {
     console.log('sideways margin');
     // return [sv.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(lrd), ev];
     return [sv.add(vse.dir().mirror().abs().mul(_pathMargin)).setDir(lrd), ev];
   }
 
-  let absVf = vf.abs();
-  let absVr = vr.abs();
-
   // stop condition - if the arrow facing the direction it should go and there is no orthogonal distance to travel
-  if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir)) {
+  if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir) && sv.faceDir.eq(l.dir())) {
     console.log('path connected');
     return [ev, ev];
   }
@@ -165,14 +166,14 @@ const getNextPoint = (sv: Vector, ev: Vector, margin = true): [Vector, Vector, b
     } else if (dfe.mul(vf).absSize() < _pathMargin) {
       // start margin because a forward direction to small
       console.log('start margin because small');
-      let vNext = sv.add(sv.faceDir.mul(_pathMargin)).setDir(lred);
+      let svNext = sv.add(sv.faceDir.mul(_pathMargin)).setDir(lred);
       // if the target point is closer then _pathMargin from vNext add more margin so the line would become r curve instead of z on next run
-      let NextNextDiff = ev.sub(vNext).mul(lped).absSize();
+      let NextNextDiff = ev.sub(svNext).mul(lped).absSize();
       if (NextNextDiff < _pathMargin) {
-        vNext = vNext.add(sv.faceDir.mul(_pathMargin - NextNextDiff));
+        svNext = svNext.add(sv.faceDir.mul(_pathMargin - NextNextDiff));
       }
       // ev.sub(vNext).mul(lped).absSize();
-      return [vNext, ev];
+      return [svNext, ev];
     }
 
     // add margin before end if needed
@@ -180,6 +181,10 @@ const getNextPoint = (sv: Vector, ev: Vector, margin = true): [Vector, Vector, b
     if (ev.faceDir.eq(lped.reverse())) {
       console.log('end margin');
       return [sv, ev.sub(ev.faceDir.mul(_pathMargin)).setDir(loed)];
+    } else if (lr.diff().absSize() < _pathMargin) {
+      console.log('end margin because small');
+      let evNext = ev.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(loed);
+      return [sv, evNext, false];
     }
   }
 
@@ -273,10 +278,10 @@ const test = () => {
     //   ep = new Vector(10, 100);
     // let sp = new Vector(150, 50),
     //   ep = new Vector(100, 150);
-    let sp = new Vector(0, 0),
-      ep = new Vector(50, 50);
+    let sp = new Vector(0, -14),
+      ep = new Vector(100, 0);
 
-    let points = calcSmartPath(sp, 'right', ep, 'right');
+    let points = calcSmartPath(sp, 'right', ep, 'top');
     console.log(points);
   };
   testZ();

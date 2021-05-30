@@ -175,6 +175,7 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
   const [, setRender] = useState({});
   const forceRerender = () => setRender({});
   let boxNum = -1;
+  // const states = ['right'];
   const states = ['right', 'left', 'bottom', 'top'];
   // const states = ['right'];
   return (
@@ -199,13 +200,13 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
               </div>
               <DraggableBox2 id={boxNum} forceRerender={forceRerender} style={{ ...boxStyle }} />
               <DraggableBox2 id={boxNum + 1} forceRerender={forceRerender} style={{ ...boxStyle }} />
-              {/*<Xarrow*/}
-              {/*  start={String(boxNum)}*/}
-              {/*  end={String(boxNum + 1)}*/}
-              {/*  {...xarrowProps}*/}
-              {/*  startAnchor={st}*/}
-              {/*  endAnchor={st2}*/}
-              {/*/>*/}
+              <Xarrow
+                start={String(boxNum)}
+                end={String(boxNum + 1)}
+                {...xarrowProps}
+                // startAnchor={st}
+                // endAnchor={st2}
+              />
             </div>
           );
         })
