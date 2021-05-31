@@ -55,8 +55,8 @@ export class Vector {
   // adding a constant or a vector in self direction
   addInDir = (num: number | Vector) => this.add(this.faceDir.mul(num));
 
-  parallel = (v: Vector) => this.faceDir.abs().eq(v.faceDir.abs());
-  orthogonal = (v: Vector) => this.faceDir.mul(v.faceDir).absSize() === 0;
+  isParallel = (v: Vector) => this.faceDir.abs().eq(v.faceDir.abs());
+  isOrthogonal = (v: Vector) => this.faceDir.mul(v.faceDir).absSize() === 0;
 }
 
 /**
