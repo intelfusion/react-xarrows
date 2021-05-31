@@ -51,6 +51,12 @@ export class Vector {
 
   dir = () => new Dir(this.x, this.y);
   setDir = (d: Dir) => new Vector(this, d);
+
+  // adding a constant or a vector in self direction
+  addInDir = (num: number | Vector) => this.add(this.faceDir.mul(num));
+
+  parallel = (v: Vector) => this.faceDir.abs().eq(v.faceDir.abs());
+  orthogonal = (v: Vector) => this.faceDir.mul(v.faceDir).absSize() === 0;
 }
 
 /**
@@ -100,7 +106,7 @@ class Line {
   dir = () => new Dir(this.end.x - this.root.x, this.end.y - this.root.y);
 }
 
-class VectorList extends Array {
+class VectorArr extends Array<Vector> {
   // vectors: Vector[] = [];
   // add = (...vs: Vector[]) => {
   //   this.vectors.push(...vs);
@@ -114,106 +120,200 @@ class VectorList extends Array {
   //   // this.lines.push(...vectors);
   // }
   toList = () => this.map((v) => [v.x, v.y]);
-  rev = () => new VectorList(...this.reverse());
+  rev = () => new VectorArr(...this.reverse());
 
   print = () => `Vector ${this.map((v) => `[${[v.x, v.y]}]`)}`;
 }
 
-const getNextPoint = (sv: Vector, ev: Vector, margin = true): [Vector, Vector, boolean?] => {
-  let _pathMargin = pathMargin;
-  let l = new Line(sv, ev);
-  // if ((l.dir().x == 0 || l.dir().y == 0) && sv.faceDir.eq(ev.faceDir)) return [ev, ev];
-  let vse = l.diff(); // the vector from s to e
-  let dfe = new Dir(sv.faceDir.abs().mul(vse));
-  let vf = sv.faceDir.mul(vse.abs()); // the forward vector from the arrow point of view(takes into account everthing)
-  let vr = vse.sub(sv.faceDir.abs().mul(vse));
-  let vfe = sv.faceDir.abs().mul(vse); // forward parallel to start dir at the direction for target point
-  let lf = new Line(sv, sv.add(vf));
-  let lr = new Line(sv, sv.add(vr));
-  let lfe = new Line(sv, sv.add(vfe));
-  let lre = lr;
-  let lfd = lf.dir(),
-    lrd = lr.dir();
-  if (lrd.absSize() === 0) lrd = lfd.mirror();
-  let lfed = lfe.dir(),
-    lred = lrd;
+const getVectors = (sv: Vector, ev: Vector) => {
+  // v - vector
+  // f - forward - in the parallel direction to start towards the end point
+  // r - right(or left,relative) - the orthogonal direction to f towards the end point
+  // d - direction
 
-  let absVf = vf.abs();
-  let absVr = vr.abs();
-
-  if (vf.absSize() == 0) {
-    console.log('sideways margin');
-    // return [sv.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(lrd), ev];
-    return [sv.add(vse.dir().mirror().abs().mul(_pathMargin)).setDir(lrd), ev];
-  }
-
-  // stop condition - if the arrow facing the direction it should go and there is no orthogonal distance to travel
-  if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir) && sv.faceDir.eq(l.dir())) {
-    console.log('path connected');
-    return [ev, ev];
-  }
-
-  if (margin) {
-    //choose line parallel to end line direction for later
-    let [lped, loed] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred];
-    if (sv.faceDir.eq(dfe.reverse())) {
-      if (sv.faceDir.mul(vse).size() < _pathMargin) {
-        // start margin because reverse direction
-        console.log('start margin because reverse');
-        return [sv.add(sv.faceDir.mul(_pathMargin)).setDir(lred), ev];
-      }
-      // } else if (sv.faceDir.mul(vf.size()).size() < _pathMargin) {
-    } else if (dfe.mul(vf).absSize() < _pathMargin) {
-      // start margin because a forward direction to small
-      console.log('start margin because small');
-      let svNext = sv.add(sv.faceDir.mul(_pathMargin)).setDir(lred);
-      // if the target point is closer then _pathMargin from vNext add more margin so the line would become r curve instead of z on next run
-      let NextNextDiff = ev.sub(svNext).mul(lped).absSize();
-      if (NextNextDiff < _pathMargin) {
-        svNext = svNext.add(sv.faceDir.mul(_pathMargin - NextNextDiff));
-      }
-      // ev.sub(vNext).mul(lped).absSize();
-      return [svNext, ev];
-    }
-
-    // add margin before end if needed
-    // if (ev.faceDir.eq(lped.reverse()) && vr.size() < _pathMargin) {
-    if (ev.faceDir.eq(lped.reverse())) {
-      console.log('end margin');
-      return [sv, ev.sub(ev.faceDir.mul(_pathMargin)).setDir(loed)];
-    } else if (lr.diff().absSize() < _pathMargin) {
-      console.log('end margin because small');
-      let evNext = ev.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(loed);
-      return [sv, evNext, false];
-    }
-  }
-
-  // if start point direction is the same as end point direction then it's a Z curve
-  if (sv.faceDir.eq(ev.faceDir)) {
-    console.log('Z curve');
-    return [sv.add(vf.dev(2)).setDir(lred), ev, false];
-  }
-
-  //else its a normal 90 grid break at the end of current direction (r curve)
-  console.log('r curve');
-  return [sv.add(sv.faceDir.mul(absVf)).setDir(lred), ev];
+  let vse = ev.sub(sv);
+  let fd = new Dir(sv.faceDir.mul(vse.abs()));
+  let fv = fd.mul(vse);
+  let rv = vse.sub(fv);
+  let rd = new Dir(rv);
+  return [fv, fd, rv, rd] as const;
 };
 
-class Rectangle {
-  left: Line;
-  top: Line;
-  right: Line;
-  bottom: Line;
+const handleMargin = (grid: SmartGrid) => {
+  let _pathMargin = pathMargin;
+  let [sv, ev] = grid.getEdges();
+  let [fv, fd, rv, rd] = getVectors(sv, ev);
 
-  constructor(leftTop: Vector, rightBottom: Vector) {
-    this.left = new Line(leftTop, new Vector(leftTop.x, rightBottom.y));
-    this.top = new Line(leftTop, new Vector(rightBottom.x, leftTop.y));
-    this.right = new Line(new Vector(rightBottom.x, leftTop.y), rightBottom);
-    this.bottom = new Line(new Vector(leftTop.x, rightBottom.y), rightBottom);
+  // if the target point is exactly behind the source point
+  if (rv.absSize() === 0 && sv.faceDir.eq(ev.faceDir.reverse())) {
+    // console.log('exactly behind!');
+
+    rd = sv.faceDir.mirror();
+
+    // grid.pushSource(sv.add(sv.addInDir(_pathMargin)).setDir(sv.faceDir.mirror()));
+    // sv = grid.getSource();
+    // [fv, fd, rv, rd] = getVectors(sv, ev);
+
+    // return [sv.add(sv.addInDir(_pathMargin)).setDir(sv.faceDir.mirror()), ev];
   }
-}
 
-const rect = new Rectangle(new Vector(0, 5), new Vector(30, 20));
+  // add start margin
+  if (sv.faceDir.reverse().eq(fd)) {
+    console.log('start margin because reverse');
+    grid.pushSource(sv.add(sv.faceDir.mul(_pathMargin)).setDir(rd));
+    sv = grid.getSource();
+    [fv, fd, rv, rd] = getVectors(sv, ev);
+  }
+  if (fv.absSize() < _pathMargin) {
+    console.log('start margin because small');
+    // grid.pushSource(sv.add(sv.faceDir.mul(_pathMargin - fv.absSize())).setDir(rd));
+    let svNext = sv.addInDir(_pathMargin).setDir(rd);
+    // [fv, fd, rv, rd] = getVectors(svNext, ev);
+    // // if the target point is closer then _pathMargin from vNext add more margin so the line would become r curve instead of z on next run
+    // let NextNextDiff = ev.sub(svNext).mul(lped).absSize();
+    // if (NextNextDiff < _pathMargin) {
+    //   svNext = svNext.add(sv.faceDir.mul(_pathMargin - NextNextDiff));
+    // }
+
+    grid.pushSource(svNext);
+    sv = grid.getSource();
+    [fv, fd, rv, rd] = getVectors(sv, ev);
+    // return [sv.add(sv.faceDir.mul(_pathMargin - fv.absSize())).setDir(rd), ev, false];
+  }
+
+  // add end margin
+  let [epd, eod] = fd.abs().eq(ev.abs()) ? [fd, rd] : [rd, fd];
+  if (ev.faceDir.eq(fd.reverse()) || ev.faceDir.eq(rd.reverse())) {
+    console.log('end margin because reverse');
+    grid.pushTarget(ev.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(eod));
+    sv = grid.getTarget();
+    [fv, fd, rv, rd] = getVectors(sv, ev);
+
+    // return [sv, ev.add(epd.mul(_pathMargin)).setDir(eod)];
+  }
+  if (rv.absSize() < _pathMargin) {
+    console.log('end margin because small');
+    grid.pushTarget(ev.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(eod));
+    // return [sv, ev.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(eod), false];
+  }
+};
+
+const drawToTarget = (grid: SmartGrid): void => {
+  // s - start
+  // e - end
+  // p - parallel
+  // o - orthogonal
+
+  let [sv, ev] = grid.getEdges();
+  let [fv, fd, rv, rd] = getVectors(sv, ev);
+
+  if (sv.faceDir.x != 0 && sv.faceDir.y != 0)
+    console.warn('sv.faceDir.x=', sv.faceDir.x, 'sv.faceDir.y=', sv.faceDir.y);
+
+  // if the target point is directly in front of the source target then connect
+  if (rv.absSize() === 0 && sv.faceDir.eq(ev.faceDir) && sv.faceDir.eq(fd)) {
+    console.log('path connected');
+    // grid.pushSource(ev);
+    return;
+    // return [ev, ev];
+  }
+  // let [lped, loed] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred];
+  // let [epd, eod] = fd.abs().eq(ev.abs()) ? [fd, rd] : [rd, fd];
+
+  if (sv.faceDir.eq(ev.faceDir)) {
+    console.log('Z curve');
+    grid.pushSource(sv.add(fv.dev(2)).setDir(rd));
+    return drawToTarget(grid);
+    // return [sv.add(vf.dev(2)).setDir(lred), ev, false];
+  }
+
+  // its r curve
+  console.log('r curve');
+  grid.pushSource(sv.addInDir(fv.abs()).setDir(rd));
+
+  return drawToTarget(grid);
+  // return [sv.addInDir(fv).setDir(rd), ev];
+
+  // let _pathMargin = pathMargin;
+  // let l = new Line(sv, ev);
+  // // if ((l.dir().x == 0 || l.dir().y == 0) && sv.faceDir.eq(ev.faceDir)) return [ev, ev];
+  // let vse = l.diff(); // the vector from s to e
+  // let dfe = new Dir(sv.faceDir.abs().mul(vse));
+  // let vf = sv.faceDir.mul(vse.abs()); // the forward vector from the arrow point of view(takes into account everthing)
+  // let vr = vse.sub(sv.faceDir.abs().mul(vse));
+  // let vfe = sv.faceDir.abs().mul(vse); // forward parallel to start dir at the direction for target point
+  // let lf = new Line(sv, sv.add(vf));
+  // let lr = new Line(sv, sv.add(vr));
+  // let lfe = new Line(sv, sv.add(vfe));
+  // let lre = lr;
+  // let lfd = lf.dir(),
+  //   lrd = lr.dir();
+  // if (lrd.absSize() === 0) lrd = lfd.mirror();
+  // let lfed = lfe.dir(),
+  //   lred = lrd;
+  //
+  // let absVf = vf.abs();
+  // let absVr = vr.abs();
+  //
+  // if (vf.absSize() == 0) {
+  //   //for the case there is no orthogonal distance to travel which means the target point is exactly ahead of beyond the source point
+  //   console.log('sideways margin');
+  //   // return [sv.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(lrd), ev];
+  //   return [sv.add(vse.dir().mirror().abs().mul(_pathMargin)).setDir(lrd), ev];
+  // }
+  //
+  // // stop condition - if the arrow facing the direction it should go and there is no orthogonal distance to travel
+  // if (lr.diff().absSize() === 0 && sv.faceDir.eq(ev.faceDir) && sv.faceDir.eq(l.dir())) {
+  //   console.log('path connected');
+  //   return [ev, ev];
+  // }
+  //
+  // if (margin) {
+  //   //choose line parallel to end line direction for later
+  //   let [lped, loed] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred];
+  //   if (sv.faceDir.eq(dfe.reverse())) {
+  //     if (sv.faceDir.mul(vse).size() < _pathMargin) {
+  //       // start margin because reverse direction
+  //       console.log('start margin because reverse');
+  //       return [sv.add(sv.faceDir.mul(_pathMargin)).setDir(lred), ev];
+  //     }
+  //     // } else if (sv.faceDir.mul(vf.size()).size() < _pathMargin) {
+  //   } else if (dfe.mul(vf).absSize() < _pathMargin) {
+  //     // start margin because a forward direction to small
+  //     console.log('start margin because small');
+  //     let svNext = sv.add(sv.faceDir.mul(_pathMargin)).setDir(lred);
+  //     // if the target point is closer then _pathMargin from vNext add more margin so the line would become r curve instead of z on next run
+  //     let NextNextDiff = ev.sub(svNext).mul(lped).absSize();
+  //     if (NextNextDiff < _pathMargin) {
+  //       svNext = svNext.add(sv.faceDir.mul(_pathMargin - NextNextDiff));
+  //     }
+  //     // ev.sub(vNext).mul(lped).absSize();
+  //     return [svNext, ev];
+  //   }
+  //
+  //   // point the next point to be margin on target
+  //   // if (ev.faceDir.eq(lped.reverse()) && vr.size() < _pathMargin) {
+  //   if (ev.faceDir.eq(lped.reverse()) || lr.diff().absSize() < _pathMargin) {
+  //     console.log('end margin');
+  //     return [ev.add(ev.faceDir.mul(_pathMargin)).setDir(loed), ev];
+  //   }
+  //   // else if (lr.diff().absSize() < _pathMargin) {
+  //   //   console.log('end margin because small');
+  //   //   let evNext = ev.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(loed);
+  //   //   return [sv, evNext, false];
+  //   // }
+  // }
+  //
+  // // if start point direction is the same as end point direction then it's a Z curve
+  // if (sv.faceDir.eq(ev.faceDir)) {
+  //   console.log('Z curve');
+  //   return [sv.add(vf.dev(2)).setDir(lred), ev, false];
+  // }
+  //
+  // //else its a normal 90 grid break at the end of current direction (r curve)
+  // console.log('r curve');
+  // return [sv.add(sv.faceDir.mul(absVf)).setDir(lred), ev];
+};
 
 type sidesType = 'top' | 'right' | 'bottom' | 'left';
 
@@ -238,25 +338,37 @@ const EAD = {
 } as const;
 
 class SmartGrid {
-  private starts: VectorList = new VectorList();
-  private ends: VectorList = new VectorList();
+  private starts: VectorArr = new VectorArr();
+  private ends: VectorArr = new VectorArr();
 
   constructor(sv: Vector, ev: Vector, rects: Rectangle[] = []) {
     this.starts.push(sv);
     this.ends.push(ev);
-    let lastCur = this.starts[this.starts.length - 1],
-      lastTar = this.ends[this.ends.length - 1];
-    let margin = true;
-    while (!lastCur.eq(lastTar)) {
-      let [cur, tar, doMargin] = getNextPoint(lastCur, lastTar, margin);
-      margin = doMargin;
-      if (cur.eq(tar)) return;
-      if (!cur.eq(lastCur)) this.starts.push(cur);
-      if (!tar.eq(lastTar)) this.ends.push(tar);
-      lastCur = this.starts[this.starts.length - 1];
-      lastTar = this.ends[this.ends.length - 1];
-    }
+    handleMargin(this);
+    drawToTarget(this);
+
+    // while (!lastCur.eq(lastTar)) {
+    //   let [cur, tar, doMargin] = drawToTarget(this);
+    //   margin = doMargin;
+    //   if (cur.eq(tar)) return;
+    //   if (!cur.eq(lastCur)) this.pushSource(cur);
+    //   if (!tar.eq(lastTar)) this.pushTarget(tar);
+    //   [lastCur, lastTar] = this.getEdges();
+    // }
   }
+
+  getSource = () => this.starts[this.starts.length - 1];
+  getTarget = () => this.ends[this.ends.length - 1];
+  getEdges = () => [this.getSource(), this.getTarget()];
+
+  pushSource = (v: Vector) => {
+    this.starts.push(v);
+    return v;
+  };
+  pushTarget = (v: Vector) => {
+    this.ends.push(v);
+    return v;
+  };
 
   getPoints = () => [...this.starts.toList(), ...this.ends.rev().toList()];
 }
@@ -272,14 +384,28 @@ export const calcSmartPath = (sp: Vector, sd: sidesType, ep: Vector, ed: sidesTy
   return points;
 };
 
+class Rectangle {
+  left: Line;
+  top: Line;
+  right: Line;
+  bottom: Line;
+
+  constructor(leftTop: Vector, rightBottom: Vector) {
+    this.left = new Line(leftTop, new Vector(leftTop.x, rightBottom.y));
+    this.top = new Line(leftTop, new Vector(rightBottom.x, leftTop.y));
+    this.right = new Line(new Vector(rightBottom.x, leftTop.y), rightBottom);
+    this.bottom = new Line(new Vector(leftTop.x, rightBottom.y), rightBottom);
+  }
+}
+
 const test = () => {
   const testZ = () => {
     // let sp = new Vector(0, 0),
     //   ep = new Vector(10, 100);
     // let sp = new Vector(150, 50),
     //   ep = new Vector(100, 150);
-    let sp = new Vector(0, -14),
-      ep = new Vector(100, 0);
+    let sp = new Vector(980, 1100),
+      ep = new Vector(1000, 1000);
 
     let points = calcSmartPath(sp, 'right', ep, 'top');
     console.log(points);
