@@ -210,62 +210,80 @@ const drawToTarget = (grid: SmartGrid): void => {
   let xd = new Dir(new Vector(vse.x, 0));
   let yd = new Dir(new Vector(0, vse.y));
 
-  if (xd.absSize() === 0) {
-    xd = yd.mirror();
-    console.log('ASDASD');
-  }
-  if (yd.absSize() === 0) {
-    yd = xd.mirror();
-    console.log('123123');
-  }
+  if (xd.absSize() === 0) xd = yd.mirror();
+  if (yd.absSize() === 0) yd = xd.mirror();
 
   // the dirs inwards the rectangle that connects the 2 points
   let svDirs = filterDirs(sv.faceDirs, [xd, yd]);
   let evDirs = filterDirs(ev.faceDirs, [xd, yd]);
 
-  for (let svDir of svDirs) {
-    for (let evDir of evDirs) {
-      //here the direction of svDir and evDir will always be inwards the rectangle
+  // chose(arbitrary) the first allowed dir
+  let svDir = sv.faceDirs[0];
+  let evDir = ev.faceDirs[0];
 
-      let svf = svDir.mul(vse.abs());
-      let svr = vse.sub(svf);
-      let sdf = new Dir(svf);
-      let sdr = new Dir(svr);
+  //direction and vectors of rectangle
+  let svf = svDir.mul(vse.abs());
+  let svr = vse.sub(svf);
+  let sdf = new Dir(svf);
+  let sdr = new Dir(svr);
 
-      // if (sdf.absSize() === 0) sdf = sdr.mirror();
-      // if (sdr.absSize() === 0) sdr = sdf.mirror();
-
-      if (svr.absSize() === 0 && svDir.eq(evDir) && svDir.eq(sdf)) {
-        console.log('path connected');
-        return;
-      }
-      if (svDir.eq(evDir)) {
-        console.log('Z curve');
-        let svNext = sv.add(svf.dev(2));
-        grid.pushSource(svNext);
-        grid.pushSource(svNext.add(svr).setDirs([sdf]));
-        return drawToTarget(grid);
-      }
-      console.log('r curve');
-      grid.pushSource(sv.add(svf).setDirs([sdr]));
-      return drawToTarget(grid);
-    }
-  }
   if (svDirs.length === 0) {
-    console.log('new start point');
-    let svDir = sv.faceDirs[0];
+    console.log('start because outside');
     // if(svDir.absSize()===0)svDir
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(svDir));
     grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs(dirs));
     return drawToTarget(grid);
   }
+
+  let evf = evDir.mul(vse.abs());
+  let evr = vse.sub(evf);
+  let edf = new Dir(evf);
+  let edr = new Dir(evr);
   if (evDirs.length === 0) {
-    console.log('new end point');
-    let evDir = ev.faceDirs[0];
+    console.log('end because outside');
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(evDir));
     grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs(dirs));
     return drawToTarget(grid);
   }
+
+  if (!(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
+    //prevent infinite loop
+    if (svf.absSize() < pathMargin) {
+      console.log('start because small');
+      grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs([sdr]));
+      return drawToTarget(grid);
+    }
+    if (evf.absSize() < pathMargin) {
+      console.log('end because small');
+      grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs([edr]));
+      return drawToTarget(grid);
+    }
+  }
+
+  // for (let svDir of svDirs) {
+  //   for (let evDir of evDirs) {
+  //here the direction of svDir and evDir will always be inwards the rectangle
+
+  if (svr.absSize() === 0 && svDir.eq(evDir) && svDir.eq(sdf)) {
+    console.log('path connected');
+    return;
+  }
+  if (svDir.eq(evDir)) {
+    console.log('Z curve');
+    let svNext = sv.add(svf.dev(2));
+    grid.pushSource(svNext);
+    grid.pushSource(svNext.add(svr).setDirs([sdf]));
+    return drawToTarget(grid);
+  }
+  console.log('r curve');
+  // if (svf.absSize() < pathMargin) {
+  //   svf = svf.add(sdf.mul(pathMargin - svf.absSize()));
+  // }
+  grid.pushSource(sv.add(svf).setDirs([sdr]));
+  return drawToTarget(grid);
+
+  //   }
+  // }
 
   // let [fv, fd, rv, rd] = getVectors(sv, ev);
   //
@@ -384,9 +402,9 @@ const test = () => {
     // let sp = new Vector(980, 1100),
     //   ep = new Vector(1000, 1000);
     let sp = new Vector(1000, 1000),
-      ep = new Vector(1100, 1000);
+      ep = new Vector(1010, 1010);
 
-    let points = calcSmartPath(sp, 'left', ep, 'left');
+    let points = calcSmartPath(sp, 'right', ep, 'top');
     console.log(points);
   };
   testZ();
