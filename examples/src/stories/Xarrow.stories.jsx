@@ -204,8 +204,8 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
                 start={String(boxNum)}
                 end={String(boxNum + 1)}
                 {...xarrowProps}
-                // startAnchor={st}
-                // endAnchor={st2}
+                // startAnchor={'right'}
+                // endAnchor={'right'}
               />
             </div>
           );
