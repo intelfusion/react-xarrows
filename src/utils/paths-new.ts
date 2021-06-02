@@ -248,12 +248,12 @@ const handleMargin = (grid: SmartGrid) => {
     if (svf.absSize() < pathMargin * factor) {
       console.log('start because small');
       grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs([sdr]));
-      return handleMargin(grid);
+      // return handleMargin(grid);
     }
     if (evf.absSize() < pathMargin * factor) {
       console.log('end because small');
       grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs([edr]));
-      return handleMargin(grid);
+      // return handleMargin(grid);
     }
   }
 };
@@ -428,10 +428,10 @@ const test = () => {
   const testZ = () => {
     // let sp = new Vector(980, 1100),
     //   ep = new Vector(1000, 1000);
-    let sp = new Vector(1000, 980),
-      ep = new Vector(1100, 1000);
+    let sp = new Vector(1000, 1000),
+      ep = new Vector(1020, 1000);
 
-    let points = calcSmartPath(sp, 'left', ep, 'right');
+    let points = calcSmartPath(sp, 'right', ep, 'bottom');
     console.log(points);
   };
   testZ();
