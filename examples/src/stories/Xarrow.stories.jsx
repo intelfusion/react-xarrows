@@ -268,3 +268,39 @@ export default {
   title: 'Xarrow',
   component: Xarrow,
 };
+
+export const Test = () => {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '500px',
+        position: 'absolute',
+      }}>
+      <div id="elem1" style={boxStyle}>
+        elem1
+      </div>
+      <div id="elem2" style={{ ...boxStyle, position: 'relative', left: '100px' }}>
+        elem2
+      </div>
+      <div id="elem3" style={{ ...boxStyle, position: 'relative', left: '100px' }}>
+        elem2
+      </div>
+      <Xarrow
+        start="elem1"
+        end="elem2"
+        showHead={false}
+        startAnchor={{ position: 'bottom', offset: { rightness: -30 } }}
+        path={'grid'}
+      />
+      <Xarrow
+        start="elem1"
+        end="elem3"
+        showHead={false}
+        startAnchor={{ position: 'bottom', offset: { rightness: -30 } }}
+        path={'grid'}
+      />
+    </div>
+  );
+};
