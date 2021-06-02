@@ -243,12 +243,14 @@ const handleMargin = (grid: SmartGrid) => {
 
   if (svDir.eq(evDir) || !(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
     // if (!(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
-    if (svf.absSize() < pathMargin) {
+    let factor = 1;
+    if (svDir.eq(evDir)) factor = 2;
+    if (svf.absSize() < pathMargin * factor) {
       console.log('start because small');
       grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs([sdr]));
       return handleMargin(grid);
     }
-    if (evf.absSize() < pathMargin) {
+    if (evf.absSize() < pathMargin * factor) {
       console.log('end because small');
       grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs([edr]));
       return handleMargin(grid);
