@@ -179,7 +179,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
    */
   const updateIfNeeded = () => {
     // in case one of the elements does not mounted skip any update
-    if (startRef == null || endRef == null || showXarrow == false) return;
+    if (startRef.current == null || endRef.current == null || showXarrow == false) return;
 
     if (!isEqual(varProps, prevProps.current)) {
       //first check if any properties changed

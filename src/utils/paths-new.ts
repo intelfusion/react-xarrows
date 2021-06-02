@@ -246,8 +246,8 @@ const drawToTarget = (grid: SmartGrid): void => {
     return drawToTarget(grid);
   }
 
+  // if (svDir.eq(evDir) || !(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
   if (!(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
-    //prevent infinite loop
     if (svf.absSize() < pathMargin) {
       console.log('start because small');
       grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs([sdr]));
@@ -401,10 +401,10 @@ const test = () => {
   const testZ = () => {
     // let sp = new Vector(980, 1100),
     //   ep = new Vector(1000, 1000);
-    let sp = new Vector(1000, 1000),
-      ep = new Vector(1010, 1010);
+    let sp = new Vector(1000, 980),
+      ep = new Vector(1100, 1000);
 
-    let points = calcSmartPath(sp, 'right', ep, 'top');
+    let points = calcSmartPath(sp, 'left', ep, 'right');
     console.log(points);
   };
   testZ();

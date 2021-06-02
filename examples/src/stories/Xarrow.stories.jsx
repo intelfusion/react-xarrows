@@ -192,7 +192,7 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
                 width: 250,
                 height: 100,
                 border: '2px solid black',
-                position: 'relative',
+                // position: 'relative', TODO: investigate: why causing infinity loop(when endAnchor='right')??
               }}
               key={st + st2}>
               <div style={{ position: 'absolute', left: 0, top: 0 }}>
@@ -204,8 +204,8 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
                 start={String(boxNum)}
                 end={String(boxNum + 1)}
                 {...xarrowProps}
-                // startAnchor={'right'}
-                // endAnchor={'right'}
+                startAnchor={st}
+                endAnchor={st2}
               />
             </div>
           );
@@ -214,6 +214,31 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
     </div>
   );
 };
+
+// const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
+//   const [, setRender] = useState({});
+//   const forceRerender = () => setRender({});
+//   const states = ['right'];
+//   return (
+//     <div style={{ ...canvasStyle, position: 'absolute', flexWrap: 'wrap' }} id="canvas">
+//       <div
+//         style={{
+//           ...canvasStyle,
+//           alignItems: 'center',
+//           justifyContent: 'space-evenly',
+//           width: 250,
+//           height: 100,
+//           border: '2px solid black',
+//           // position: 'relative',
+//         }}>
+//         <div style={{ position: 'absolute', left: 0, top: 0 }}>5</div>
+//         <DraggableBox2 id={1} forceRerender={forceRerender} style={{ ...boxStyle }} />
+//         <DraggableBox2 id={2} forceRerender={forceRerender} style={{ ...boxStyle }} />
+//         <Xarrow start={'1'} end={'2'} {...xarrowProps} startAnchor={'right'} endAnchor={'right'} />
+//       </div>
+//     </div>
+//   );
+// };
 
 export const AllStates = (ar) => <AllStatesTemplate {...ar} />;
 AllStates.args = {
