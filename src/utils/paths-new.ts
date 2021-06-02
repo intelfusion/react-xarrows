@@ -198,12 +198,7 @@ const filterDirs = (dirs: Dir[], allowedDirs: Dir[]) => {
   });
 };
 
-const drawToTarget = (grid: SmartGrid): void => {
-  // s - start
-  // e - end
-  // p - parallel
-  // o - orthogonal
-
+const handleMargin = (grid: SmartGrid) => {
   let [sv, ev] = grid.getEdges();
   if (sv.eq(ev)) return;
   let vse = ev.sub(sv);
@@ -232,7 +227,7 @@ const drawToTarget = (grid: SmartGrid): void => {
     // if(svDir.absSize()===0)svDir
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(svDir));
     grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs(dirs));
-    return drawToTarget(grid);
+    return handleMargin(grid);
   }
 
   let evf = evDir.mul(vse.abs());
@@ -243,22 +238,52 @@ const drawToTarget = (grid: SmartGrid): void => {
     console.log('end because outside');
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(evDir));
     grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs(dirs));
-    return drawToTarget(grid);
+    return handleMargin(grid);
   }
 
-  // if (svDir.eq(evDir) || !(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
-  if (!(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
+  if (svDir.eq(evDir) || !(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
+    // if (!(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
     if (svf.absSize() < pathMargin) {
       console.log('start because small');
       grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs([sdr]));
-      return drawToTarget(grid);
+      return handleMargin(grid);
     }
     if (evf.absSize() < pathMargin) {
       console.log('end because small');
       grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs([edr]));
-      return drawToTarget(grid);
+      return handleMargin(grid);
     }
   }
+};
+
+const drawToTarget = (grid: SmartGrid): void => {
+  // s - start
+  // e - end
+  // p - parallel
+  // o - orthogonal
+
+  let [sv, ev] = grid.getEdges();
+  if (sv.eq(ev)) return;
+  let vse = ev.sub(sv);
+  let xd = new Dir(new Vector(vse.x, 0));
+  let yd = new Dir(new Vector(0, vse.y));
+
+  if (xd.absSize() === 0) xd = yd.mirror();
+  if (yd.absSize() === 0) yd = xd.mirror();
+
+  // the dirs inwards the rectangle that connects the 2 points
+  let svDirs = filterDirs(sv.faceDirs, [xd, yd]);
+  let evDirs = filterDirs(ev.faceDirs, [xd, yd]);
+
+  // chose(arbitrary) the first allowed dir
+  let svDir = sv.faceDirs[0];
+  let evDir = ev.faceDirs[0];
+
+  //direction and vectors of rectangle
+  let svf = svDir.mul(vse.abs());
+  let svr = vse.sub(svf);
+  let sdf = new Dir(svf);
+  let sdr = new Dir(svr);
 
   // for (let svDir of svDirs) {
   //   for (let evDir of evDirs) {
@@ -343,7 +368,7 @@ class SmartGrid {
   constructor(sv: Vector, ev: Vector, rects: Rectangle[] = []) {
     this.starts.push(sv);
     this.ends.push(ev);
-    // handleMargin(this);
+    handleMargin(this);
     drawToTarget(this);
 
     // while (!lastCur.eq(lastTar)) {
