@@ -180,22 +180,22 @@ class VectorArr extends Array<Vector> {
 //     // return [sv, ev.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(eod), false];
 //   }
 // };
-const _filterDirs = (dirs: Dir[], allowedDirs: Dir[], func: CallableFunction) => {
-  return dirs.filter((d) => {
-    for (let allowedDir of allowedDirs) {
-      if (func(d)) return true;
-    }
-    return false;
-  });
-};
 
 const filterDirs = (dirs: Dir[], allowedDirs: Dir[]) => {
-  return dirs.filter((d) => {
+  let pass: Dir[] = [],
+    fail: Dir[] = [];
+  let currentPass;
+  for (let d of dirs) {
+    currentPass = false;
     for (let allowedDir of allowedDirs) {
-      if (allowedDir.eq(d)) return true;
+      if (allowedDir.eq(d)) {
+        pass.push(d);
+        currentPass = true;
+      }
     }
-    return false;
-  });
+    if (!currentPass) fail.push(d);
+  }
+  return [pass, fail] as const;
 };
 
 const handleMargin = (grid: SmartGrid) => {
@@ -209,12 +209,26 @@ const handleMargin = (grid: SmartGrid) => {
   if (yd.absSize() === 0) yd = xd.mirror();
 
   // the dirs inwards the rectangle that connects the 2 points
-  let svDirs = filterDirs(sv.faceDirs, [xd, yd]);
-  let evDirs = filterDirs(ev.faceDirs, [xd, yd]);
+  let [svDirsIn, svDirsOut] = filterDirs(sv.faceDirs, [xd, yd]);
+  let [evDirsIn, evDirsOut] = filterDirs(ev.faceDirs, [xd, yd]);
 
   // chose(arbitrary) the first allowed dir
   let svDir = sv.faceDirs[0];
   let evDir = ev.faceDirs[0];
+
+  // let vf = svDir.abs().mul(vse);
+  // let vr = vse.sub(vf);
+  //
+  // //direction and vectors of rectangle
+  // let svf = svDir.mul(vf.absSize());
+  // let svr = vse.sub(svf);
+  // let sdf = new Dir(svf);
+  // let sdr = new Dir(svr);
+  //
+  // let evf = evDir.mul(vf.absSize());
+  // let evr = vse.sub(evf);
+  // let edf = new Dir(evf);
+  // let edr = new Dir(evr);
 
   //direction and vectors of rectangle
   let svf = svDir.mul(vse.abs());
@@ -222,7 +236,12 @@ const handleMargin = (grid: SmartGrid) => {
   let sdf = new Dir(svf);
   let sdr = new Dir(svr);
 
-  if (svDirs.length === 0) {
+  let evf = evDir.mul(vse.abs());
+  let evr = vse.sub(evf); //todo: maybe vse.sub(evf.abs())
+  let edf = new Dir(evf);
+  let edr = new Dir(evr);
+
+  if (svDirsIn.length === 0) {
     console.log('start because outside');
     // if(svDir.absSize()===0)svDir
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(svDir));
@@ -230,11 +249,7 @@ const handleMargin = (grid: SmartGrid) => {
     return handleMargin(grid);
   }
 
-  let evf = evDir.mul(vse.abs());
-  let evr = vse.sub(evf);
-  let edf = new Dir(evf);
-  let edr = new Dir(evr);
-  if (evDirs.length === 0) {
+  if (evDirsIn.length === 0) {
     console.log('end because outside');
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(evDir));
     grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs(dirs));
@@ -242,18 +257,15 @@ const handleMargin = (grid: SmartGrid) => {
   }
 
   if (svDir.eq(evDir) || !(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
-    // if (!(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
     let factor = 1;
     if (svDir.eq(evDir)) factor = 2;
     if (svf.absSize() < pathMargin * factor) {
       console.log('start because small');
       grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs([sdr]));
-      // return handleMargin(grid);
     }
     if (evf.absSize() < pathMargin * factor) {
       console.log('end because small');
       grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs([edr]));
-      // return handleMargin(grid);
     }
   }
 };
@@ -287,8 +299,6 @@ const drawToTarget = (grid: SmartGrid): void => {
   let sdf = new Dir(svf);
   let sdr = new Dir(svr);
 
-  // for (let svDir of svDirs) {
-  //   for (let evDir of evDirs) {
   //here the direction of svDir and evDir will always be inwards the rectangle
 
   if (svr.absSize() === 0 && svDir.eq(evDir) && svDir.eq(sdf)) {
@@ -302,43 +312,9 @@ const drawToTarget = (grid: SmartGrid): void => {
     grid.pushSource(svNext.add(svr).setDirs([sdf]));
     return drawToTarget(grid);
   }
-  console.log('r curve');
-  // if (svf.absSize() < pathMargin) {
-  //   svf = svf.add(sdf.mul(pathMargin - svf.absSize()));
-  // }
   grid.pushSource(sv.add(svf).setDirs([sdr]));
+  console.log('r curve');
   return drawToTarget(grid);
-
-  //   }
-  // }
-
-  // let [fv, fd, rv, rd] = getVectors(sv, ev);
-  //
-  // if (sv.faceDirs.x != 0 && sv.faceDirs.y != 0)
-  //   console.warn('sv.faceDir.x=', sv.faceDirs.x, 'sv.faceDir.y=', sv.faceDirs.y);
-  //
-  // // if the target point is directly in front of the source target then connect
-  // if (rv.absSize() === 0 && sv.faceDirs.eq(ev.faceDirs) && sv.faceDirs.eq(fd)) {
-  //   console.log('path connected');
-  //   // grid.pushSource(ev);
-  //   return;
-  //   // return [ev, ev];
-  // }
-  // // let [lped, loed] = ev.faceDir.absEq(lred) ? [lred, lfed] : [lfed, lred];
-  // // let [epd, eod] = fd.abs().eq(ev.abs()) ? [fd, rd] : [rd, fd];
-  //
-  // if (sv.faceDirs.eq(ev.faceDirs)) {
-  //   console.log('Z curve');
-  //   grid.pushSource(sv.add(fv.dev(2)).setDir(rd));
-  //   return drawToTarget(grid);
-  //   // return [sv.add(vf.dev(2)).setDir(lred), ev, false];
-  // }
-  //
-  // // its r curve
-  // console.log('r curve');
-  // grid.pushSource(sv.addInDir(fv.abs()).setDir(rd));
-  //
-  // return drawToTarget(grid);
 };
 
 type sidesType = 'top' | 'right' | 'bottom' | 'left';
@@ -404,7 +380,8 @@ export const calcSmartPath = (sp: Vector, sd: sidesType, ep: Vector, ed: sidesTy
   let sdd = dirs[SAD[sd]];
   let edd = dirs[EAD[ed]];
 
-  const smartGrid = new SmartGrid(new Vector(sp, [sdd]), new Vector(ep, [edd]));
+  const smartGrid = new SmartGrid(new Vector(sp, [dirs['R']]), new Vector(ep, [dirs['U']]));
+  // const smartGrid = new SmartGrid(new Vector(sp, [sdd]), new Vector(ep, [edd]));
   const points = smartGrid.getPoints();
   // console.log(points);
   return points;
@@ -428,10 +405,12 @@ const test = () => {
   const testZ = () => {
     // let sp = new Vector(980, 1100),
     //   ep = new Vector(1000, 1000);
-    let sp = new Vector(1000, 1000),
-      ep = new Vector(1020, 1000);
-
-    let points = calcSmartPath(sp, 'right', ep, 'bottom');
+    let sp = new Vector(1000, 1010),
+      ep = new Vector(1100, 1000);
+    let sd = [dirs['R']],
+      ed = [dirs['U']];
+    // let points = calcSmartPath(sp, 'right', ep, 'top');
+    const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed)).getPoints();
     console.log(points);
   };
   testZ();
