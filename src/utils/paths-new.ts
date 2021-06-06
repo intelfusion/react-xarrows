@@ -339,13 +339,85 @@ const EAD = {
   left: 'R',
 } as const;
 
+const checkPath = (vse: Vector, svDirs: Dir[], evDirs: Dir[], conditionFunc: condFuncType) => {
+  for (let svD of svDirs) {
+    for (let evD of evDirs) {
+      // the rectangle vectors and dirs
+      let vf = svD.abs().mul(vse);
+      let vr = vse.sub(vf);
+      let df = new Dir(vf);
+      let dr = new Dir(vr);
+      if (conditionFunc(svD, evD, vf, vr, df, dr)) return [svD, evD] as const;
+    }
+  }
+  return null;
+};
+const getVectors = (v, vse) => {
+  let vf = v.mul(vse.abs());
+  let vr = vse.sub(vf);
+  let df = new Dir(vf);
+  let dr = new Dir(vr);
+  return [vf, vr, df, dr];
+};
+
+type condFuncType = (d1: Dir, d2: Dir, vf: Vector, vr: Vector, df: Dir, dr: Dir) => boolean;
+
+const chooseSimplestPath = (sv: Vector, ev: Vector): [Dir[], Dir[]] => {
+  let vse = ev.sub(sv);
+
+  // the rectangle vectors and dirs
+  let vf = sv.faceDirs[0].abs().mul(vse);
+  let vr = vse.sub(vf);
+  let df = new Dir(vf);
+  let dr = new Dir(vr);
+
+  // the dirs inwards the rectangle that connects the 2 points
+  let [svDirsIn, svDirsOut] = filterDirs(sv.faceDirs, [df, dr]);
+  let [evDirsIn, evDirsOut] = filterDirs(ev.faceDirs, [df, dr]);
+
+  if (svDirsIn.length === 1 && evDirsIn.length === 1) return [svDirsIn, evDirsIn];
+
+  let svDirs: Dir[];
+  let evDirs: Dir[];
+
+  // todo: choose connect to end from right if possible
+
+  if (svDirsIn.length === 0) svDirs = svDirsOut;
+  else svDirs = svDirsIn;
+  if (evDirsIn.length === 0) evDirs = evDirsOut;
+  else evDirs = evDirsIn;
+  console.log(svDirs, evDirs);
+  return [svDirs, evDirs];
+
+  // // chose simplest possible path
+  // let svDir: Dir;
+  // let evDir: Dir;
+  //
+  // let result: readonly [Dir, Dir];
+  // const _checkPath = (conditionFunc: condFuncType) => checkPath(vse, svDirsIn, evDirsIn, conditionFunc);
+  // // r curve
+  // result = _checkPath((svD, evD, vf, vr, df, dr) => svD.eq(df) && evD.eq(dr) && vf.absSize() >= pathMargin);
+  // // z curve
+  // if (result === null) {
+  //   result = _checkPath((svD, evD, vf, vr, df, dr) => svD.eq(evD) && svD.eq(df) && vf.absSize() >= pathMargin);
+  // }
+  // // small margin
+  // if (result === null) {
+  //   // result = _checkPath((svD, evD, vf, vr, df, dr) => vf.absSize() < pathMargin);
+  //   // result = _checkPath((svD, evD, vf, vr, df, dr) => vf.absSize() < pathMargin);
+  // }
+  //
+  // return result as [Dir, Dir];
+};
+
 class SmartGrid {
   private starts: VectorArr = new VectorArr();
   private ends: VectorArr = new VectorArr();
 
   constructor(sv: Vector, ev: Vector, rects: Rectangle[] = []) {
-    this.starts.push(sv);
-    this.ends.push(ev);
+    let [sd, ed] = chooseSimplestPath(sv, ev);
+    this.starts.push(sv.setDirs(sd));
+    this.ends.push(ev.setDirs(ed));
     handleMargin(this);
     drawToTarget(this);
 
@@ -380,7 +452,7 @@ export const calcSmartPath = (sp: Vector, sd: sidesType, ep: Vector, ed: sidesTy
   let sdd = dirs[SAD[sd]];
   let edd = dirs[EAD[ed]];
 
-  const smartGrid = new SmartGrid(new Vector(sp, [dirs['R']]), new Vector(ep, [dirs['U']]));
+  const smartGrid = new SmartGrid(new Vector(sp, [dirs['R']]), new Vector(ep, [dirs['U'], dirs['D']]));
   // const smartGrid = new SmartGrid(new Vector(sp, [sdd]), new Vector(ep, [edd]));
   const points = smartGrid.getPoints();
   // console.log(points);
@@ -405,10 +477,10 @@ const test = () => {
   const testZ = () => {
     // let sp = new Vector(980, 1100),
     //   ep = new Vector(1000, 1000);
-    let sp = new Vector(1000, 1010),
-      ep = new Vector(1100, 1000);
+    let sp = new Vector(1000, 1000),
+      ep = new Vector(1100, 990);
     let sd = [dirs['R']],
-      ed = [dirs['U']];
+      ed = [dirs['U'], dirs['D'], dirs['R']];
     // let points = calcSmartPath(sp, 'right', ep, 'top');
     const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed)).getPoints();
     console.log(points);
