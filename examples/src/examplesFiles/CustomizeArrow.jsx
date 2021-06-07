@@ -275,6 +275,8 @@ const CustomizeArrow = () => {
   const _animateDrawing = enableAnimateDrawing ? animateDrawing : false;
   const [headShape, setHeadShape] = useState(Object.keys(arrowShapes)[0]);
   const [tailShape, setTailShape] = useState(Object.keys(arrowShapes)[1]);
+
+  const [startFacingDir, setStartFacingDir] = useState('auto');
   // const [headOffset, setHeadOffset] = useState(0.25);
   // const [tailOffset, setTailOffset] = useState(0.25);
 
@@ -285,6 +287,7 @@ const CustomizeArrow = () => {
     start: 'box1', //  can be string
     end: box2.ref, //  or reference
     startAnchor: startAnchor,
+    // startAnchor: [{ position: 'right', facingDir: 'left' }],
     endAnchor: endAnchor,
     curveness: Number(curveness),
     color: color,

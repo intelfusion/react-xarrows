@@ -6,7 +6,7 @@
     "strict": true,
     "lib": [
       "dom",
-      "es2017"
+      "es2020"
     ],
     "jsx": "react",
     "noImplicitAny": false,

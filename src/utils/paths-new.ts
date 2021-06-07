@@ -1,6 +1,7 @@
 // @ts-ignore
 import { number } from 'prop-types';
 import pick from 'lodash.pick';
+import { _faceDirType, anchorEdgeType, anchorNamedType } from '../types';
 
 // type VectType = Vector|DVector
 const operatorFunc = (p: Vector, p2: Vector | number, operator) => {
@@ -320,23 +321,23 @@ const drawToTarget = (grid: SmartGrid): void => {
 type sidesType = 'top' | 'right' | 'bottom' | 'left';
 
 const dirs = {
-  U: new Dir(0, -1),
-  R: new Dir(1, 0),
-  D: new Dir(0, 1),
-  L: new Dir(-1, 0),
+  up: new Dir(0, -1),
+  right: new Dir(1, 0),
+  down: new Dir(0, 1),
+  left: new Dir(-1, 0),
 } as const;
 
-const SAD = {
-  top: 'U',
-  right: 'R',
-  bottom: 'D',
-  left: 'L',
+export const SAD = {
+  top: 'up',
+  right: 'right',
+  bottom: 'down',
+  left: 'left',
 } as const;
-const EAD = {
-  top: 'D',
-  right: 'L',
-  bottom: 'U',
-  left: 'R',
+export const EAD = {
+  top: 'down',
+  right: 'left',
+  bottom: 'up',
+  left: 'right',
 } as const;
 
 const checkPath = (vse: Vector, svDirs: Dir[], evDirs: Dir[], conditionFunc: condFuncType) => {
@@ -387,6 +388,16 @@ const chooseSimplestPath = (sv: Vector, ev: Vector): [Dir[], Dir[]] => {
   if (evDirsIn.length === 0) evDirs = evDirsOut;
   else evDirs = evDirsIn;
   console.log(svDirs, evDirs);
+
+  // prefer r curve if exists (over more complicated path like z or adding margin)
+  for (let svDir of svDirs) {
+    for (let evDir of evDirs) {
+      if (svDir.abs().eq(evDir.mirror().abs())) {
+        // console.log('r chosen!', svDir, evDir);
+        return [[svDir], [evDir]];
+      }
+    }
+  }
   return [svDirs, evDirs];
 
   // // chose simplest possible path
@@ -447,12 +458,52 @@ class SmartGrid {
   getPoints = () => [...this.starts.toList(), ...this.ends.rev().toList()];
 }
 
-export const calcSmartPath = (sp: Vector, sd: sidesType, ep: Vector, ed: sidesType, rects: Rectangle[] = []) => {
-  // start anchor direction
-  let sdd = dirs[SAD[sd]];
-  let edd = dirs[EAD[ed]];
+let side2dict = { outwards: SAD, inwards: EAD };
+export const points2Vector = (
+  x1: number,
+  y1: number,
+  anchorName: anchorNamedType,
+  dirNames: Exclude<_faceDirType, 'auto'>[]
+): Vector => {
+  let sd: Dir[];
+  //if middle all dirs allowed
+  let _dirNames: Exclude<_faceDirType, 'auto'>[];
+  if (anchorName === 'middle') _dirNames = Object.keys(dirs) as Array<keyof typeof dirs>;
+  else
+    _dirNames = dirNames.map((dirName) => {
+      if (dirName === 'inwards') return EAD[anchorName];
+      else if (dirName === 'outwards') return SAD[anchorName];
+      else return dirName;
+    });
+  sd = _dirNames.map((dirName) => dirs[dirName]);
+  return new Vector(x1, y1, sd);
+  // return [new Vector(x1, y1, sd), new Vector(x2, y2, ed)];
+};
+// export const points2Vectors = (
+//   x1: number,
+//   y1: number,
+//   x2: number,
+//   y2: number,
+//   startAnchor: anchorNamedType,
+//   endAnchor: anchorNamedType
+// ): [Vector, Vector] => {
+//   let sd: Dir[], ed: Dir[];
+//   //if middle all dirs allowed
+//   if (startAnchor === 'middle') sd = Object.values(dirs);
+//   else sd = dirs[SAD[startAnchor]];
+//   if (endAnchor === 'middle') sd = Object.values(dirs);
+//   else ed = dirs[EAD[startAnchor]];
+//   return [new Vector(x1, y1, sd), new Vector(x2, y2, ed)];
+// };
 
-  const smartGrid = new SmartGrid(new Vector(sp, [dirs['R']]), new Vector(ep, [dirs['U'], dirs['D']]));
+export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[] = []) => {
+  // // start anchor direction
+  // let sdd = dirs[SAD[sd]];
+  // let edd = dirs[EAD[ed]];
+
+  console.log(sp, ep);
+  const smartGrid = new SmartGrid(sp, ep);
+  // const smartGrid = new SmartGrid(new Vector(sp, [dirs['U']]), new Vector(ep, [dirs['U'], dirs['D'], dirs['R']]));
   // const smartGrid = new SmartGrid(new Vector(sp, [sdd]), new Vector(ep, [edd]));
   const points = smartGrid.getPoints();
   // console.log(points);
@@ -479,16 +530,22 @@ const test = () => {
     //   ep = new Vector(1000, 1000);
     let sp = new Vector(1000, 1000),
       ep = new Vector(1100, 990);
-    let sd = [dirs['R']],
-      ed = [dirs['U'], dirs['D'], dirs['R']];
+    let sd = [dirs['right']],
+      ed = [dirs['up'], dirs['down'], dirs['right']];
     // let points = calcSmartPath(sp, 'right', ep, 'top');
     const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed)).getPoints();
     console.log(points);
   };
   testZ();
 };
+
+const testPoints2Vector = () => {
+  console.log(points2Vector(1000, 1000, 'top', ['inwards', 'left']));
+};
+
 if (require.main === module) {
-  test();
+  // test();
+  testPoints2Vector();
 } else {
 }
 // test();
