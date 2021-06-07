@@ -18,7 +18,7 @@ const operators = {
   dev: (x, y) => x / y,
 };
 
-const pathMargin = 15;
+// const pathMargin = 15;
 
 export class Vector {
   x: number;
@@ -109,79 +109,6 @@ class VectorArr extends Array<Vector> {
   print = () => `Vector ${this.map((v) => `[${[v.x, v.y]}]`)}`;
 }
 
-// const getVectors = (sv: Vector, ev: Vector) => {
-//   // v - vector
-//   // f - forward - in the parallel direction to start towards the end point
-//   // r - right(or left,relative) - the orthogonal direction to f towards the end point
-//   // d - direction
-//
-//   let vse = ev.sub(sv);
-//   let fd = new Dir(sv.faceDirs.mul(vse.abs()));
-//   let fv = fd.mul(vse);
-//   let rv = vse.sub(fv);
-//   let rd = new Dir(rv);
-//   return [fv, fd, rv, rd] as const;
-// };
-
-// const handleMargin = (grid: SmartGrid) => {
-//   let _pathMargin = pathMargin;
-//   let [sv, ev] = grid.getEdges();
-//   let [fv, fd, rv, rd] = getVectors(sv, ev);
-//
-//   // if the target point is exactly behind the source point
-//   if (rv.absSize() === 0 && sv.faceDirs.eq(ev.faceDirs.reverse())) {
-//     // console.log('exactly behind!');
-//
-//     rd = sv.faceDirs.mirror();
-//
-//     // grid.pushSource(sv.add(sv.addInDir(_pathMargin)).setDir(sv.faceDir.mirror()));
-//     // sv = grid.getSource();
-//     // [fv, fd, rv, rd] = getVectors(sv, ev);
-//
-//     // return [sv.add(sv.addInDir(_pathMargin)).setDir(sv.faceDir.mirror()), ev];
-//   }
-//
-//   // add start margin
-//   if (sv.faceDirs.reverse().eq(fd)) {
-//     console.log('start margin because reverse');
-//     grid.pushSource(sv.add(sv.faceDirs.mul(_pathMargin)).setDir(rd));
-//     sv = grid.getSource();
-//     [fv, fd, rv, rd] = getVectors(sv, ev);
-//   }
-//   if (fv.absSize() < _pathMargin) {
-//     console.log('start margin because small');
-//     // grid.pushSource(sv.add(sv.faceDir.mul(_pathMargin - fv.absSize())).setDir(rd));
-//     let svNext = sv.addInDir(_pathMargin).setDir(rd);
-//     // [fv, fd, rv, rd] = getVectors(svNext, ev);
-//     // // if the target point is closer then _pathMargin from vNext add more margin so the line would become r curve instead of z on next run
-//     // let NextNextDiff = ev.sub(svNext).mul(lped).absSize();
-//     // if (NextNextDiff < _pathMargin) {
-//     //   svNext = svNext.add(sv.faceDir.mul(_pathMargin - NextNextDiff));
-//     // }
-//
-//     grid.pushSource(svNext);
-//     sv = grid.getSource();
-//     [fv, fd, rv, rd] = getVectors(sv, ev);
-//     // return [sv.add(sv.faceDir.mul(_pathMargin - fv.absSize())).setDir(rd), ev, false];
-//   }
-//
-//   // add end margin
-//   let [epd, eod] = fd.abs().eq(ev.abs()) ? [fd, rd] : [rd, fd];
-//   if (ev.faceDirs.eq(fd.reverse()) || ev.faceDirs.eq(rd.reverse())) {
-//     console.log('end margin because reverse');
-//     grid.pushTarget(ev.add(ev.faceDirs.reverse().mul(_pathMargin)).setDir(eod));
-//     sv = grid.getTarget();
-//     [fv, fd, rv, rd] = getVectors(sv, ev);
-//
-//     // return [sv, ev.add(epd.mul(_pathMargin)).setDir(eod)];
-//   }
-//   if (rv.absSize() < _pathMargin) {
-//     console.log('end margin because small');
-//     grid.pushTarget(ev.add(ev.faceDirs.reverse().mul(_pathMargin)).setDir(eod));
-//     // return [sv, ev.add(ev.faceDir.reverse().mul(_pathMargin)).setDir(eod), false];
-//   }
-// };
-
 const filterDirs = (dirs: Dir[], allowedDirs: Dir[]) => {
   let pass: Dir[] = [],
     fail: Dir[] = [];
@@ -199,7 +126,7 @@ const filterDirs = (dirs: Dir[], allowedDirs: Dir[]) => {
   return [pass, fail] as const;
 };
 
-const handleMargin = (grid: SmartGrid) => {
+const handleMargin = (grid: SmartGrid, pathMargin: number) => {
   let [sv, ev] = grid.getEdges();
   if (sv.eq(ev)) return;
   let vse = ev.sub(sv);
@@ -247,14 +174,14 @@ const handleMargin = (grid: SmartGrid) => {
     // if(svDir.absSize()===0)svDir
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(svDir));
     grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs(dirs));
-    return handleMargin(grid);
+    return handleMargin(grid, pathMargin);
   }
 
   if (evDirsIn.length === 0) {
     console.log('end because outside');
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(evDir));
     grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs(dirs));
-    return handleMargin(grid);
+    return handleMargin(grid, pathMargin);
   }
 
   if (svDir.eq(evDir) || !(svf.absSize() < pathMargin && evf.absSize() < pathMargin)) {
@@ -424,11 +351,11 @@ class SmartGrid {
   private starts: VectorArr = new VectorArr();
   private ends: VectorArr = new VectorArr();
 
-  constructor(sv: Vector, ev: Vector, rects: Rectangle[] = []) {
+  constructor(sv: Vector, ev: Vector, rects: Rectangle[], pathMargin) {
     let [sd, ed] = chooseSimplestPath(sv, ev);
     this.starts.push(sv.setDirs(sd));
     this.ends.push(ev.setDirs(ed));
-    handleMargin(this);
+    handleMargin(this, pathMargin);
     drawToTarget(this);
 
     // while (!lastCur.eq(lastTar)) {
@@ -495,15 +422,8 @@ export const points2Vector = (
 //   return [new Vector(x1, y1, sd), new Vector(x2, y2, ed)];
 // };
 
-export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[] = []) => {
-  // // start anchor direction
-  // let sdd = dirs[SAD[sd]];
-  // let edd = dirs[EAD[ed]];
-
-  console.log(sp, ep);
-  const smartGrid = new SmartGrid(sp, ep);
-  // const smartGrid = new SmartGrid(new Vector(sp, [dirs['U']]), new Vector(ep, [dirs['U'], dirs['D'], dirs['R']]));
-  // const smartGrid = new SmartGrid(new Vector(sp, [sdd]), new Vector(ep, [edd]));
+export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[], pathMargin) => {
+  const smartGrid = new SmartGrid(sp, ep, rects, pathMargin);
   const points = smartGrid.getPoints();
   // console.log(points);
   return points;
@@ -532,7 +452,7 @@ const test = () => {
     let sd = [dirs['right']],
       ed = [dirs['up'], dirs['down'], dirs['right']];
     // let points = calcSmartPath(sp, 'right', ep, 'top');
-    const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed)).getPoints();
+    const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15).getPoints();
     console.log(points);
   };
   testZ();

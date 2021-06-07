@@ -370,30 +370,12 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let v1, v2;
     let sSides = chosenStart.anchor.facingDir as _faceDirType[],
       eSides = chosenEnd.anchor.facingDir as _faceDirType[];
-    // if (sSide.includes('auto')) sSide = ['outwards'];
-    // if (eSide.includes('auto')) eSide = ['inwards'];
     sSides = sSides.map((side) => (side === 'auto' ? 'outwards' : side));
     eSides = eSides.map((side) => (side === 'auto' ? 'inwards' : side));
-    // if(chosenStart.anchor.facingDir==='auto') chosenStart.anchor.facingDir = 'outwards'
-    // if(chosenEnd.anchor.facingDir==='auto') chosenStart.anchor.facingDir = 'inwards'
 
-    // if (['auto', 'outwards'].includes(chosenStart.anchor.facingDir as string)) v1Dict = SAD;
-    // else if (['inwards'].includes(chosenStart.anchor.facingDir as string)) v1Dict = EAD;
-    // else v1Dict = SAD;
-    // if (['auto', 'inwards'].includes(chosenEnd.anchor.facingDir as string)) v2Dict = EAD;
-    // else if (['outwards'].includes(chosenEnd.anchor.facingDir as string)) v2Dict = SAD;
-    // else v2Dict = SAD;
-    console.log(sSides, eSides);
     v1 = points2Vector(x1, y1, chosenStart.anchor.position, sSides as Exclude<_faceDirType, 'auto'>[]);
     v2 = points2Vector(x2, y2, chosenEnd.anchor.position, eSides as Exclude<_faceDirType, 'auto'>[]);
-    // console.log(v1, v2);
-    // if (chosenStart.anchor.facingDir === 'auto') v1 = points2Vector(x1, y1, chosenStart.anchor.position, SAD);
-    // if (chosenEnd.anchor.facingDir === 'auto') v2 = points2Vector(x2, y2, chosenStart.anchor.position, EAD);
-    // if (chosenStart.anchor.facingDir === 'inwards') v1 =
-    // if (chosenEnd.anchor.facingDir === 'inwards') v2 =
-    let points = calcSmartPath(v1, v2);
-    // const startDir = SAD[chosenStart.anchorName];
-    // const endDir = EAD[chosenEnd.anchorName];
+    let points = calcSmartPath(v1, v2, [], 30);
 
     arrowPath = pointsToLines(points);
 
