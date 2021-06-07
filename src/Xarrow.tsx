@@ -282,7 +282,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
     // convert startAnchor and endAnchor to list of objects represents allowed anchors.
     let startPoints = prepareAnchor(startAnchor, sPos);
-    console.log(startPoints);
     let endPoints = prepareAnchor(endAnchor, ePos);
 
     // choose the smallest path for 2 ponts from these possibilities.
@@ -371,7 +370,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let v1, v2;
     let sSides = chosenStart.anchor.facingDir as _faceDirType[],
       eSides = chosenEnd.anchor.facingDir as _faceDirType[];
-    console.log(sSides);
     // if (sSide.includes('auto')) sSide = ['outwards'];
     // if (eSide.includes('auto')) eSide = ['inwards'];
     sSides = sSides.map((side) => (side === 'auto' ? 'outwards' : side));
@@ -395,12 +393,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     // if (chosenStart.anchor.facingDir === 'inwards') v1 =
     // if (chosenEnd.anchor.facingDir === 'inwards') v2 =
     let points = calcSmartPath(v1, v2);
-    console.log(points);
     // const startDir = SAD[chosenStart.anchorName];
     // const endDir = EAD[chosenEnd.anchorName];
 
     arrowPath = pointsToLines(points);
-    console.log(arrowPath);
 
     const cw = absDx + excLeft + excRight,
       ch = absDy + excUp + excDown;
@@ -566,8 +562,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   // tailShape.elem:K force the type for passProps,arrowHeadProps,arrowTailProps property. for now `as any` is used to
   // avoid typescript conflicts
   // so todo- fix all the `passProps as any` assertions
-
-  console.log('!@#', showXarrow, st.arrowPath, st);
 
   return (
     <div {...divContainerProps} style={{ position: 'absolute', ...divContainerStyle }} {...extraProps}>

@@ -53,32 +53,7 @@ export const prepareAnchor = (anchor: anchorType, anchorPos: dimensionType) => {
         });
       })
     );
-
-    // );      anchorChoice2.push(
-    //   ...(['left', 'right', 'top', 'bottom'] as anchorEdgeType[]).map((an) => {
-    //     return { position: an };
-    //   })
-    // );
   }
-  //
-  // let i=1
-  // while( i = items.indexOf(3452);)
-  // let anchorChoice3 = anchorChoice2.map((an) => {
-  //   let {
-  //     position,
-  //     offset: { rightness, bottomness },
-  //   } = an;
-  // });
-
-  // //replace any 'auto' with ['left','right','bottom','top']
-  // if (anchorChoice2.some((an) => an.position === 'auto')) {
-  //   anchorChoice2 = anchorChoice2.filter((an) => an.position !== 'auto');
-  //   anchorChoice2.push(
-  //     ...(['left', 'right', 'top', 'bottom'] as anchorEdgeType[]).map((an) => {
-  //       return { position: an };
-  //     })
-  //   );
-  // }
 
   // default values
   let anchorChoice3 = anchorChoice2.map((anchorChoice) => {
@@ -99,74 +74,16 @@ export const prepareAnchor = (anchor: anchorType, anchorPos: dimensionType) => {
 
   let anchorChoice4 = anchorChoice3 as anchorCustomPositionType2[];
 
-  // let anchorPossibilities: Required<anchorCustomPositionType>[] = [];
-  // if (anchorChoice.map((a) => a.position).includes('auto')) {
-  //   let autoAnchor = anchorChoice.find((a) => a.position === 'auto');
-
   // now prepare this list of anchors to object expected by the `getShortestLine` function
   return anchorChoice4.map((anchor) => {
     let defsOffsets = getAnchorsDefaultOffsets(anchorPos.right - anchorPos.x, anchorPos.bottom - anchorPos.y);
     let { rightness, bottomness } = defsOffsets[anchor.position];
     return {
-      // x: anchorPos.x + pos.offset.rightness,
-      // y: anchorPos.y + pos.offset.bottomness,
-      // anchorName: pos.position as anchorEdgeType,
-      x: rightness + anchor.offset.rightness,
-      y: bottomness + anchor.offset.bottomness,
+      x: anchorPos.x + rightness + anchor.offset.rightness,
+      y: anchorPos.y + bottomness + anchor.offset.bottomness,
       anchor: anchor,
     };
   });
-
-  // //now map each item in the array to relevant object
-  // let anchorChoiceMapped = anchorChoice.map((anchorChoice) => {
-  //   if (typeOf(anchorChoice) === 'string') {
-  //     if (!tAnchorEdge.includes(anchorChoice as any)) anchorChoice = 'auto';
-  //     anchorChoice = anchorChoice as anchorNamedType;
-  //     return {
-  //       position: anchorChoice,
-  //       offset: { rightness: 0, bottomness: 0 },
-  //     };
-  //   } else if (typeOf(anchorChoice) === 'object') {
-  //     anchorChoice = anchorChoice as anchorCustomPositionType;
-  //     if (!anchorChoice.position) anchorChoice.position = 'auto';
-  //     if (!anchorChoice.offset) anchorChoice.offset = { rightness: 0, bottomness: 0 };
-  //     if (!anchorChoice.offset.bottomness) anchorChoice.offset.bottomness = 0;
-  //     if (!anchorChoice.offset.rightness) anchorChoice.offset.rightness = 0;
-  //
-  //     if (!anchorChoice.facingDir) anchorChoice.facingDir = ['auto'];
-  //     if (!Array.isArray(anchorChoice.facingDir)) anchorChoice.facingDir = [anchorChoice.facingDir];
-  //     anchorChoice = anchorChoice as Required<anchorCustomPositionType>;
-  //     anchorChoice.facingDir = anchorChoice.facingDir as _faceDirType[];
-  //     return anchorChoice;
-  //   }
-  // });
-
-  //now build the object that represents location possibilities for different anchors
-  // (convert any `position:<anchor>' to the relevant positions)
-
-  // // todo: REWRITE! WRONG!
-  // anchorChoice = anchorChoice as anchorCustomPositionType[];
-  // anchorChoice;
-  // let anchorPossibilities: Required<anchorCustomPositionType>[] = [];
-  // if (anchorChoice.map((a) => a.position).includes('auto')) {
-  //   let autoAnchor = anchorChoice.find((a) => a.position === 'auto');
-  //   (['left', 'right', 'top', 'bottom'] as anchorEdgeType[]).forEach((anchor) => {
-  //     let offset = defsOffsets[anchor];
-  //     offset.rightness += autoAnchor.offset.rightness;
-  //     offset.bottomness += autoAnchor.offset.bottomness;
-  //     anchorPossibilities.push({ position: anchor, offset });
-  //   });
-  // } else {
-  //   anchorChoice.forEach((customAnchor) => {
-  //     let offset = defsOffsets[customAnchor.position] as {
-  //       rightness: number;
-  //       bottomness: number;
-  //     };
-  //     offset.rightness += customAnchor.offset.rightness;
-  //     offset.bottomness += customAnchor.offset.bottomness;
-  //     anchorPossibilities.push({ position: customAnchor.position, offset, facingDir: ['auto'] });
-  //   });
-  // }
 };
 
 const dist = (p1, p2) => {
@@ -194,11 +111,12 @@ export const getShortestLine = (sPoints: t1[], ePoints: t1[]) => {
 };
 
 if (require.main === module) {
-  const res = prepareAnchor([{ position: 'auto', offset: { bottomness: 10 } }, 'left', 'auto'], {
-    x: 0,
-    y: 0,
+  const res = prepareAnchor('right', {
+    x: 1000,
+    y: 1000,
     bottom: 10,
     right: 20,
   });
+  // left: {x:1000,y:1005}
   console.log(res);
 }
