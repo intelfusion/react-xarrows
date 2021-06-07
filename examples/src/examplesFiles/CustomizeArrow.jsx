@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import Xarrow, { arrowShapes } from 'react-xarrows';
+import Xarrow, { arrowShapes, tFacingDir, tAnchorEdge } from 'react-xarrows';
 import Draggable from 'react-draggable';
 import NumericInput from 'react-numeric-input';
 import Collapsible from 'react-collapsible';
@@ -27,7 +27,6 @@ const canvasStyle = {
 
 const colorOptions = ['red', 'BurlyWood', 'CadetBlue', 'Coral'];
 const bodyColorOptions = [null, ...colorOptions];
-const anchorsTypes = ['left', 'right', 'top', 'bottom', 'middle', 'auto'];
 
 // one row div with elements centered
 const Div = ({ children, style = {}, ...props }) => {
@@ -100,37 +99,45 @@ const Box = (props) => {
   );
 };
 
-const ArrowAnchor = ({ anchorName, edgeAnchor, setAnchor }) => {
+const CheckList = ({ titlesList, values, setValues }) => {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', marginRight: 20 }}>
-      <p>{anchorName}: </p>
+    <div>
+      {titlesList.map((title, i) => (
+        <div
+          key={i}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            height: 25,
+          }}>
+          <p>{title}</p>
+          <input
+            style={{ height: '15px', width: '15px' }}
+            type="checkBox"
+            checked={values.includes(title)}
+            // value={}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setValues([...values, title]);
+              } else {
+                let a = [...values];
+                a.splice(values.indexOf(title), 1);
+                setValues(a);
+              }
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const TitledCheckList = ({ title, titlesList, values, setValues }) => {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', marginRight: 20, flexDirection: 'column' }}>
+      <p>{title}: </p>
       <div>
-        {anchorsTypes.map((anchor, i) => (
-          <div
-            key={i}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              height: 25,
-            }}>
-            <p>{anchor}</p>
-            <input
-              style={{ height: '15px', width: '15px' }}
-              type="checkBox"
-              checked={edgeAnchor.includes(anchor)}
-              // value={}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setAnchor([...edgeAnchor, anchor]);
-                } else {
-                  let a = [...edgeAnchor];
-                  a.splice(edgeAnchor.indexOf(anchor), 1);
-                  setAnchor(a);
-                }
-              }}
-            />
-          </div>
-        ))}
+        <CheckList titlesList={titlesList} values={values} setValues={setValues} />
       </div>
     </div>
   );
@@ -276,19 +283,20 @@ const CustomizeArrow = () => {
   const [headShape, setHeadShape] = useState(Object.keys(arrowShapes)[0]);
   const [tailShape, setTailShape] = useState(Object.keys(arrowShapes)[1]);
 
-  const [startFacingDir, setStartFacingDir] = useState('auto');
+  const [startFacingDir, setStartFacingDir] = useState(['auto']);
+  const [endFacingDir, setEndFacingDir] = useState(['auto']);
   // const [headOffset, setHeadOffset] = useState(0.25);
   // const [tailOffset, setTailOffset] = useState(0.25);
 
-  // const headShape = { ...arrowShapes[headShape], ...{ offsetForward: headOffset } };
-  // console.log(headOffset);
+  /////////////////////////////////////////////////
+  //  IMPORTANT
+  // this is the important part of this example. make sure to understand the props passed to xarrow
+  // play with the props directly to understand better the API options
   const props = {
-    // this is the important part of the example! play with the props to understand better the API options
     start: 'box1', //  can be string
     end: box2.ref, //  or reference
-    startAnchor: startAnchor,
-    // startAnchor: [{ position: 'right', facingDir: 'left' }],
-    endAnchor: endAnchor,
+    startAnchor: startAnchor.map((an) => ({ position: an, facingDir: startFacingDir })),
+    endAnchor: endAnchor.map((an) => ({ position: an, facingDir: endFacingDir })),
     curveness: Number(curveness),
     color: color,
     lineColor: lineColor,
@@ -326,6 +334,7 @@ const CustomizeArrow = () => {
     _cpy2Offset: _cpy2Offset,
     animateDrawing: _animateDrawing,
   };
+  /////////////////////////////////////////////////
 
   return (
     <div>
@@ -343,8 +352,25 @@ const CustomizeArrow = () => {
       {showMe ? (
         <div>
           <CollapsibleDiv title={'anchors'}>
-            <ArrowAnchor edgeAnchor={startAnchor} anchorName={'startAnchor'} setAnchor={setStartAnchor} />
-            <ArrowAnchor edgeAnchor={endAnchor} anchorName={'endAnchor'} setAnchor={setEndAnchor} />
+            <TitledCheckList
+              title={'startAnchor'}
+              values={startAnchor}
+              setValues={setStartAnchor}
+              titlesList={tAnchorEdge}
+            />
+            <TitledCheckList title={'endAnchor'} values={endAnchor} setValues={setEndAnchor} titlesList={tAnchorEdge} />
+            <TitledCheckList
+              title={'startFaceDirs'}
+              values={startFacingDir}
+              setValues={setStartFacingDir}
+              titlesList={tFacingDir}
+            />
+            <TitledCheckList
+              title={'endFaceDirs'}
+              values={endFacingDir}
+              setValues={setEndFacingDir}
+              titlesList={tFacingDir}
+            />
           </CollapsibleDiv>
           <MyCollapsible title={'arrow apearance'} open={true}>
             <Div>

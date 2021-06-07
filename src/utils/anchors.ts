@@ -10,6 +10,7 @@ import {
   _faceDirType,
   dimensionType,
   tAnchorEdge,
+  tFacingDir,
 } from '../types';
 
 const getAnchorsDefaultOffsets = (width: number, height: number) => {
@@ -30,7 +31,7 @@ interface anchorCustomPositionType2 extends Omit<Required<anchorCustomPositionTy
 export const prepareAnchor = (anchor: anchorType, anchorPos: dimensionType) => {
   // convert to array
   let anchorChoice = Array.isArray(anchor) ? anchor : [anchor];
-  // if (anchorChoice.length == 0) anchorChoice = ['auto'];
+  if (anchorChoice.length == 0) anchorChoice = ['auto'];
 
   //convert to array of objects
   let anchorChoice2 = anchorChoice.map((anchorChoice) => {
@@ -66,6 +67,8 @@ export const prepareAnchor = (anchor: anchorType, anchorPos: dimensionType) => {
 
       if (!anchorChoice.facingDir) anchorChoice.facingDir = ['auto'];
       if (!Array.isArray(anchorChoice.facingDir)) anchorChoice.facingDir = [anchorChoice.facingDir];
+      //filter not allowed dirs
+      anchorChoice.facingDir = anchorChoice.facingDir.filter((d) => tFacingDir.includes(d));
       anchorChoice = anchorChoice as Required<anchorCustomPositionType>;
       anchorChoice.facingDir = anchorChoice.facingDir as _faceDirType[];
       return anchorChoice;

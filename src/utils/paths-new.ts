@@ -387,7 +387,6 @@ const chooseSimplestPath = (sv: Vector, ev: Vector): [Dir[], Dir[]] => {
   else svDirs = svDirsIn;
   if (evDirsIn.length === 0) evDirs = evDirsOut;
   else evDirs = evDirsIn;
-  console.log(svDirs, evDirs);
 
   // prefer r curve if exists (over more complicated path like z or adding margin)
   for (let svDir of svDirs) {

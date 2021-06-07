@@ -2,7 +2,7 @@
 // public types
 
 // constants used for typescript and proptypes definitions
-export const tAnchorEdge = ['middle', 'left', 'right', 'top', 'bottom', 'auto'] as const;
+export const tAnchorEdge = ['auto', 'left', 'right', 'top', 'bottom', 'middle'] as const;
 export const tPaths = ['smooth', 'grid', 'straight'] as const;
 export const tSvgElems = ['circle', 'ellipse', 'line', 'path', 'polygon', 'polyline', 'rect'] as const;
 export const tFacingDir = ['auto', 'inwards', 'outwards', 'left', 'right', 'up', 'down'] as const;

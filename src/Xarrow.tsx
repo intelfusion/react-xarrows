@@ -383,8 +383,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     // if (['auto', 'inwards'].includes(chosenEnd.anchor.facingDir as string)) v2Dict = EAD;
     // else if (['outwards'].includes(chosenEnd.anchor.facingDir as string)) v2Dict = SAD;
     // else v2Dict = SAD;
-
-    console.log(chosenStart.anchor.position, sSides);
+    console.log(sSides, eSides);
     v1 = points2Vector(x1, y1, chosenStart.anchor.position, sSides as Exclude<_faceDirType, 'auto'>[]);
     v2 = points2Vector(x2, y2, chosenEnd.anchor.position, eSides as Exclude<_faceDirType, 'auto'>[]);
     // console.log(v1, v2);
@@ -767,8 +766,8 @@ const pAnchorCustomPositionType = PT.exact({
   offset: PT.exact({
     rightness: PT.number,
     bottomness: PT.number,
-    facingDir: PT.oneOfType([PT.oneOf(tFacingDir), PT.arrayOf(PT.oneOf(tFacingDir))]),
-  }).isRequired,
+  }),
+  facingDir: PT.oneOfType([PT.oneOf(tFacingDir), PT.arrayOf(PT.oneOf(tFacingDir))]),
 });
 
 const _pAnchorType = PT.oneOfType([pAnchorPositionType, pAnchorCustomPositionType]);
