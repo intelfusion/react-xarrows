@@ -52,6 +52,23 @@ export class Vector {
   setDirs = (d: Dir[]) => new Vector(this, d);
 }
 
+// receives a vector and returns direction unit
+const fQ2 = (x, y) => {
+  // let xSign = x >= 0 ? 1 : -1;
+  let ySign = y >= 0 ? 1 : -1;
+  let xSqrt = Math.sqrt(x ** 2 + y ** 2);
+  if (xSqrt == 0) return [0, 0];
+  let xDir = x / xSqrt;
+  let yDir = Math.sqrt(1 - xDir ** 2) * ySign;
+  return [xDir, yDir];
+  // return [xDir, yDir];
+  // let m = Math.max(Math.abs(x), Math.abs(y));
+  // if (m == 0) m = 1;
+  // let xDir = x / m;
+  // let yDir = y / m;
+  // return [xDir, yDir];
+};
+
 /**
  * normalized direction
  */
@@ -60,11 +77,14 @@ class Dir extends Vector {
   constructor(xDiff: number | Vector, yDiff?: number) {
     if (xDiff instanceof Vector) [xDiff, yDiff] = [xDiff.x, xDiff.y];
     if (typeof xDiff === 'number' && typeof yDiff !== 'number') throw Error('second argument should be number');
-    let m = Math.max(Math.abs(xDiff), Math.abs(yDiff));
-    if (m == 0) m = 1;
-    super(xDiff / m, yDiff / m);
-    // this.x = xDiff / m;
-    // this.y = yDiff / m;
+    let [x, y] = fQ2(xDiff, yDiff);
+    super(x, y);
+    // let { x, y } = this;
+    // let m = Math.max(Math.abs(xDiff), Math.abs(yDiff));
+    // if (m == 0) m = 1;
+    // super(xDiff / m, yDiff / m);
+    // // this.x = xDiff / m;
+    // // this.y = yDiff / m;
   }
 
   reverse = () => new Dir(-this.x, -this.y);
@@ -210,10 +230,6 @@ const drawToTarget = (grid: SmartGrid): void => {
 
   if (xd.absSize() === 0) xd = yd.mirror();
   if (yd.absSize() === 0) yd = xd.mirror();
-
-  // the dirs inwards the rectangle that connects the 2 points
-  let svDirs = filterDirs(sv.faceDirs, [xd, yd]);
-  let evDirs = filterDirs(ev.faceDirs, [xd, yd]);
 
   // chose(arbitrary) the first allowed dir
   let svDir = sv.faceDirs[0];
@@ -393,22 +409,23 @@ export const points2Vector = (
 };
 
 if (require.main === module) {
-  console.log(new Dir(1, 1));
+  console.log(new Dir(0, 0));
 
-  // test();
   // testPoints2Vector();
-  // const test = () => {
-  //   const testZ = () => {
-  //     let sp = new Vector(1000, 1000),
-  //       ep = new Vector(1100, 990);
-  //     let sd = [dirs['right']],
-  //       ed = [dirs['up'], dirs['down'], dirs['right']];
-  //     // let points = calcSmartPath(sp, 'right', ep, 'top');
-  //     const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15).getPoints();
-  //     console.log(points);
-  //   };
-  //   testZ();
-  // };
+  const test = () => {
+    const testZ = () => {
+      let sp = new Vector(1100, 1000),
+        ep = new Vector(1000, 1100);
+      let sd = [dirs['right']],
+        ed = [dirs['right']];
+      // let points = calcSmartPath(sp, 'right', ep, 'top');
+      const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15).getPoints();
+      console.log(points);
+    };
+    testZ();
+  };
+  // test();
+
   //
   // const testPoints2Vector = () => {
   //   console.log(points2Vector(1000, 1000, 'top', ['inwards', 'left']));
