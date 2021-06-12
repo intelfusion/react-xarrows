@@ -54,19 +54,12 @@ export class Vector {
 
 // receives a vector and returns direction unit
 const fQ2 = (x, y) => {
-  // let xSign = x >= 0 ? 1 : -1;
   let ySign = y >= 0 ? 1 : -1;
   let xSqrt = Math.sqrt(x ** 2 + y ** 2);
   if (xSqrt == 0) return [0, 0];
   let xDir = x / xSqrt;
   let yDir = Math.sqrt(1 - xDir ** 2) * ySign;
   return [xDir, yDir];
-  // return [xDir, yDir];
-  // let m = Math.max(Math.abs(x), Math.abs(y));
-  // if (m == 0) m = 1;
-  // let xDir = x / m;
-  // let yDir = y / m;
-  // return [xDir, yDir];
 };
 
 /**
@@ -79,12 +72,6 @@ class Dir extends Vector {
     if (typeof xDiff === 'number' && typeof yDiff !== 'number') throw Error('second argument should be number');
     let [x, y] = fQ2(xDiff, yDiff);
     super(x, y);
-    // let { x, y } = this;
-    // let m = Math.max(Math.abs(xDiff), Math.abs(yDiff));
-    // if (m == 0) m = 1;
-    // super(xDiff / m, yDiff / m);
-    // // this.x = xDiff / m;
-    // // this.y = yDiff / m;
   }
 
   reverse = () => new Dir(-this.x, -this.y);
@@ -94,8 +81,10 @@ class Dir extends Vector {
 
   abs = () => new Dir(Math.abs(this.x), Math.abs(this.y));
 
-  //mean that parallel
+  //mean that parallel directions
   absEq = (p: Vector) => Math.abs(p.x) === Math.abs(this.x) && Math.abs(p.y) === Math.abs(this.y);
+
+  toDegree = () => (Math.atan2(this.y, this.x) * 180) / Math.PI;
 
   // eq = (p: Dir) => p.x === this.x && p.y === this.y;
 }
@@ -162,20 +151,6 @@ const handleMargin = (grid: SmartGrid, pathMargin: number) => {
   let svDir = sv.faceDirs[0];
   let evDir = ev.faceDirs[0];
 
-  // let vf = svDir.abs().mul(vse);
-  // let vr = vse.sub(vf);
-  //
-  // //direction and vectors of rectangle
-  // let svf = svDir.mul(vf.absSize());
-  // let svr = vse.sub(svf);
-  // let sdf = new Dir(svf);
-  // let sdr = new Dir(svr);
-  //
-  // let evf = evDir.mul(vf.absSize());
-  // let evr = vse.sub(evf);
-  // let edf = new Dir(evf);
-  // let edr = new Dir(evr);
-
   //direction and vectors of rectangle
   let svf = svDir.mul(vse.abs());
   let svr = vse.sub(svf);
@@ -189,7 +164,6 @@ const handleMargin = (grid: SmartGrid, pathMargin: number) => {
 
   if (svDirsIn.length === 0) {
     console.log('start because outside');
-    // if(svDir.absSize()===0)svDir
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(svDir));
     grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs(dirs));
     return handleMargin(grid, pathMargin);
@@ -281,29 +255,6 @@ export const EAD = {
   left: 'right',
 } as const;
 
-const checkPath = (vse: Vector, svDirs: Dir[], evDirs: Dir[], conditionFunc: condFuncType) => {
-  for (let svD of svDirs) {
-    for (let evD of evDirs) {
-      // the rectangle vectors and dirs
-      let vf = svD.abs().mul(vse);
-      let vr = vse.sub(vf);
-      let df = new Dir(vf);
-      let dr = new Dir(vr);
-      if (conditionFunc(svD, evD, vf, vr, df, dr)) return [svD, evD] as const;
-    }
-  }
-  return null;
-};
-const getVectors = (v, vse) => {
-  let vf = v.mul(vse.abs());
-  let vr = vse.sub(vf);
-  let df = new Dir(vf);
-  let dr = new Dir(vr);
-  return [vf, vr, df, dr];
-};
-
-type condFuncType = (d1: Dir, d2: Dir, vf: Vector, vr: Vector, df: Dir, dr: Dir) => boolean;
-
 const chooseSimplestPath = (sv: Vector, ev: Vector): [Dir[], Dir[]] => {
   let vse = ev.sub(sv);
 
@@ -344,9 +295,11 @@ const chooseSimplestPath = (sv: Vector, ev: Vector): [Dir[], Dir[]] => {
 class SmartGrid {
   private starts: VectorArr = new VectorArr();
   private ends: VectorArr = new VectorArr();
+  targetDir: Dir;
 
   constructor(sv: Vector, ev: Vector, rects: Rectangle[], pathMargin) {
     let [sd, ed] = chooseSimplestPath(sv, ev);
+    this.targetDir = ed[0];
     this.starts.push(sv.setDirs(sd));
     this.ends.push(ev.setDirs(ed));
     handleMargin(this, pathMargin);
@@ -370,8 +323,9 @@ class SmartGrid {
 }
 
 export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[], pathMargin) => {
-  const smartGrid = new SmartGrid(sp, ep, rects, pathMargin);
-  return smartGrid.getPoints();
+  return new SmartGrid(sp, ep, rects, pathMargin);
+  // const smartGrid = new SmartGrid(sp, ep, rects, pathMargin);
+  // return smartGrid.getPoints();
 };
 
 class Rectangle {
@@ -409,7 +363,7 @@ export const points2Vector = (
 };
 
 if (require.main === module) {
-  console.log(new Dir(0, 0));
+  console.log(new Dir(1, -1).toDegree());
 
   // testPoints2Vector();
   const test = () => {
@@ -419,8 +373,8 @@ if (require.main === module) {
       let sd = [dirs['right']],
         ed = [dirs['right']];
       // let points = calcSmartPath(sp, 'right', ep, 'top');
-      const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15).getPoints();
-      console.log(points);
+      const smartGrid = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15);
+      const points = smartGrid.getPoints();
     };
     testZ();
   };

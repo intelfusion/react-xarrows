@@ -375,7 +375,9 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
     v1 = points2Vector(x1, y1, chosenStart.anchor.position, sSides as Exclude<_faceDirType, 'auto'>[]);
     v2 = points2Vector(x2, y2, chosenEnd.anchor.position, eSides as Exclude<_faceDirType, 'auto'>[]);
-    let points = calcSmartPath(v1, v2, [], 30);
+    let smartGrid = calcSmartPath(v1, v2, [], 30);
+    let points = smartGrid.getPoints();
+    headOrient = smartGrid.targetDir.toDegree();
 
     arrowPath = pointsToLines(points);
 
