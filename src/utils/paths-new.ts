@@ -1,7 +1,5 @@
-// @ts-ignore
 import { number } from 'prop-types';
-import pick from 'lodash.pick';
-import { _faceDirType, anchorEdgeType, anchorNamedType } from '../types';
+import { _faceDirType, anchorNamedType } from '../types';
 
 // type VectType = Vector|DVector
 const operatorFunc = (p: Vector, p2: Vector | number, operator) => {
@@ -248,10 +246,10 @@ const drawToTarget = (grid: SmartGrid): void => {
 type sidesType = 'top' | 'right' | 'bottom' | 'left';
 
 const dirs = {
-  up: new Dir(0, -1),
-  right: new Dir(1, 0),
-  down: new Dir(0, 1),
-  left: new Dir(-1, 0),
+  up: new Dir(0, -1), //270
+  right: new Dir(1, 0), //0
+  down: new Dir(0, 1), //90
+  left: new Dir(-1, 0), //180
 } as const;
 
 export const SAD = {
@@ -325,26 +323,6 @@ const chooseSimplestPath = (sv: Vector, ev: Vector): [Dir[], Dir[]] => {
     }
   }
   return [svDirs, evDirs];
-
-  // // chose simplest possible path
-  // let svDir: Dir;
-  // let evDir: Dir;
-  //
-  // let result: readonly [Dir, Dir];
-  // const _checkPath = (conditionFunc: condFuncType) => checkPath(vse, svDirsIn, evDirsIn, conditionFunc);
-  // // r curve
-  // result = _checkPath((svD, evD, vf, vr, df, dr) => svD.eq(df) && evD.eq(dr) && vf.absSize() >= pathMargin);
-  // // z curve
-  // if (result === null) {
-  //   result = _checkPath((svD, evD, vf, vr, df, dr) => svD.eq(evD) && svD.eq(df) && vf.absSize() >= pathMargin);
-  // }
-  // // small margin
-  // if (result === null) {
-  //   // result = _checkPath((svD, evD, vf, vr, df, dr) => vf.absSize() < pathMargin);
-  //   // result = _checkPath((svD, evD, vf, vr, df, dr) => vf.absSize() < pathMargin);
-  // }
-  //
-  // return result as [Dir, Dir];
 };
 
 class SmartGrid {
@@ -357,15 +335,6 @@ class SmartGrid {
     this.ends.push(ev.setDirs(ed));
     handleMargin(this, pathMargin);
     drawToTarget(this);
-
-    // while (!lastCur.eq(lastTar)) {
-    //   let [cur, tar, doMargin] = drawToTarget(this);
-    //   margin = doMargin;
-    //   if (cur.eq(tar)) return;
-    //   if (!cur.eq(lastCur)) this.pushSource(cur);
-    //   if (!tar.eq(lastTar)) this.pushTarget(tar);
-    //   [lastCur, lastTar] = this.getEdges();
-    // }
   }
 
   getSource = () => this.starts[this.starts.length - 1];
@@ -384,7 +353,25 @@ class SmartGrid {
   getPoints = () => [...this.starts.toList(), ...this.ends.rev().toList()];
 }
 
-let side2dict = { outwards: SAD, inwards: EAD };
+export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[], pathMargin) => {
+  const smartGrid = new SmartGrid(sp, ep, rects, pathMargin);
+  return smartGrid.getPoints();
+};
+
+class Rectangle {
+  left: Line;
+  top: Line;
+  right: Line;
+  bottom: Line;
+
+  constructor(leftTop: Vector, rightBottom: Vector) {
+    this.left = new Line(leftTop, new Vector(leftTop.x, rightBottom.y));
+    this.top = new Line(leftTop, new Vector(rightBottom.x, leftTop.y));
+    this.right = new Line(new Vector(rightBottom.x, leftTop.y), rightBottom);
+    this.bottom = new Line(new Vector(leftTop.x, rightBottom.y), rightBottom);
+  }
+}
+
 export const points2Vector = (
   x1: number,
   y1: number,
@@ -403,68 +390,39 @@ export const points2Vector = (
     });
   sd = _dirNames.map((dirName) => dirs[dirName]);
   return new Vector(x1, y1, sd);
-  // return [new Vector(x1, y1, sd), new Vector(x2, y2, ed)];
-};
-// export const points2Vectors = (
-//   x1: number,
-//   y1: number,
-//   x2: number,
-//   y2: number,
-//   startAnchor: anchorNamedType,
-//   endAnchor: anchorNamedType
-// ): [Vector, Vector] => {
-//   let sd: Dir[], ed: Dir[];
-//   //if middle all dirs allowed
-//   if (startAnchor === 'middle') sd = Object.values(dirs);
-//   else sd = dirs[SAD[startAnchor]];
-//   if (endAnchor === 'middle') sd = Object.values(dirs);
-//   else ed = dirs[EAD[startAnchor]];
-//   return [new Vector(x1, y1, sd), new Vector(x2, y2, ed)];
-// };
-
-export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[], pathMargin) => {
-  const smartGrid = new SmartGrid(sp, ep, rects, pathMargin);
-  const points = smartGrid.getPoints();
-  // console.log(points);
-  return points;
-};
-
-class Rectangle {
-  left: Line;
-  top: Line;
-  right: Line;
-  bottom: Line;
-
-  constructor(leftTop: Vector, rightBottom: Vector) {
-    this.left = new Line(leftTop, new Vector(leftTop.x, rightBottom.y));
-    this.top = new Line(leftTop, new Vector(rightBottom.x, leftTop.y));
-    this.right = new Line(new Vector(rightBottom.x, leftTop.y), rightBottom);
-    this.bottom = new Line(new Vector(leftTop.x, rightBottom.y), rightBottom);
-  }
-}
-
-const test = () => {
-  const testZ = () => {
-    // let sp = new Vector(980, 1100),
-    //   ep = new Vector(1000, 1000);
-    let sp = new Vector(1000, 1000),
-      ep = new Vector(1100, 990);
-    let sd = [dirs['right']],
-      ed = [dirs['up'], dirs['down'], dirs['right']];
-    // let points = calcSmartPath(sp, 'right', ep, 'top');
-    const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15).getPoints();
-    console.log(points);
-  };
-  testZ();
-};
-
-const testPoints2Vector = () => {
-  console.log(points2Vector(1000, 1000, 'top', ['inwards', 'left']));
 };
 
 if (require.main === module) {
+  console.log(new Dir(1, 1));
+
   // test();
-  testPoints2Vector();
+  // testPoints2Vector();
+  // const test = () => {
+  //   const testZ = () => {
+  //     let sp = new Vector(1000, 1000),
+  //       ep = new Vector(1100, 990);
+  //     let sd = [dirs['right']],
+  //       ed = [dirs['up'], dirs['down'], dirs['right']];
+  //     // let points = calcSmartPath(sp, 'right', ep, 'top');
+  //     const points = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15).getPoints();
+  //     console.log(points);
+  //   };
+  //   testZ();
+  // };
+  //
+  // const testPoints2Vector = () => {
+  //   console.log(points2Vector(1000, 1000, 'top', ['inwards', 'left']));
+  // };
+  //
+  // const dir2Deg = (dir: Dir) => {
+  //   return Math.sin(dir.x);
+  // };
+  //
+  // const deg2Rad = (deg: number) => (deg * Math.PI) / 180;
+
+  // console.log(dir2Deg(new Dir(1, 0)));
+  // console.log(console.log(new Dir(100, 200)));
+  // console.log(Math.sin(deg2Rad(270)));
 } else {
 }
 // test();
