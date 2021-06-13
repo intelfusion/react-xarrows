@@ -318,6 +318,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
     let _headOffset = fHeadSize * headOffset;
     let _tailOffset = fTailSize * tailOffset;
+    _headOffset = 10;
 
     // const headBox = headRef.current?.getBBox({ stroke: true }) ?? { x: 0, y: 0, width: 1, height: 1 };
     // const headBox = measureFunc(() => headRef.current?.getBBox({ stroke: true }), 'getBBox') ?? {
@@ -367,17 +368,18 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let arrowPath = `M ${x1} ${y1}`;
     // let startFaceDir = chosenStart;
     // let [v1,v2] = points2Vector(x1, y1, x2, y2, chosenStart.anchor.position, chosenEnd.anchor.position);
-    let v1, v2;
+    let sv, ev;
     let sSides = chosenStart.anchor.facingDir as _faceDirType[],
       eSides = chosenEnd.anchor.facingDir as _faceDirType[];
     sSides = sSides.map((side) => (side === 'auto' ? 'outwards' : side));
     eSides = eSides.map((side) => (side === 'auto' ? 'inwards' : side));
 
-    v1 = points2Vector(x1, y1, chosenStart.anchor.position, sSides as Exclude<_faceDirType, 'auto'>[]);
-    v2 = points2Vector(x2, y2, chosenEnd.anchor.position, eSides as Exclude<_faceDirType, 'auto'>[]);
-    let smartGrid = calcSmartPath(v1, v2, [], 30);
+    sv = points2Vector(x1, y1, chosenStart.anchor.position, sSides as Exclude<_faceDirType, 'auto'>[]);
+    ev = points2Vector(x2, y2, chosenEnd.anchor.position, eSides as Exclude<_faceDirType, 'auto'>[]);
+    let smartGrid = calcSmartPath(sv, ev, [], 30);
     let points = smartGrid.getPoints();
-    headOrient = smartGrid.targetDir.toDegree();
+    headOrient = smartGrid.getTarget().faceDirs[0].toDegree();
+    tailOrient = smartGrid.getSources()[0].faceDirs[0].toDegree();
 
     arrowPath = pointsToLines(points);
 

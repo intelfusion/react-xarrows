@@ -31,7 +31,6 @@ interface anchorCustomPositionType2 extends Omit<Required<anchorCustomPositionTy
 export const prepareAnchor = (anchor: anchorType, anchorPos: dimensionType) => {
   // convert to array
   let anchorChoice = Array.isArray(anchor) ? anchor : [anchor];
-  if (anchorChoice.length == 0) anchorChoice = ['auto'];
 
   //convert to array of objects
   let anchorChoice2 = anchorChoice.map((anchorChoice) => {
@@ -42,6 +41,7 @@ export const prepareAnchor = (anchor: anchorType, anchorPos: dimensionType) => {
 
   //remove any invalid anchor names
   anchorChoice2 = anchorChoice2.filter((an) => tAnchorEdge.includes(an.position));
+  if (anchorChoice2.length == 0) anchorChoice2 = [{ position: 'auto' }];
 
   //replace any 'auto' with ['left','right','bottom','top']
   let autosAncs = anchorChoice2.filter((an) => an.position === 'auto');
@@ -114,7 +114,8 @@ export const getShortestLine = (sPoints: t1[], ePoints: t1[]) => {
 };
 
 if (require.main === module) {
-  const res = prepareAnchor('right', {
+  // @ts-ignore
+  const res = prepareAnchor(['right'], {
     x: 1000,
     y: 1000,
     bottom: 10,

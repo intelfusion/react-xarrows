@@ -293,33 +293,37 @@ const chooseSimplestPath = (sv: Vector, ev: Vector): [Dir[], Dir[]] => {
 };
 
 class SmartGrid {
-  private starts: VectorArr = new VectorArr();
-  private ends: VectorArr = new VectorArr();
-  targetDir: Dir;
+  private sources: VectorArr = new VectorArr();
+  private targets: VectorArr = new VectorArr();
+
+  // targetDir: Dir;
 
   constructor(sv: Vector, ev: Vector, rects: Rectangle[], pathMargin) {
     let [sd, ed] = chooseSimplestPath(sv, ev);
-    this.targetDir = ed[0];
-    this.starts.push(sv.setDirs(sd));
-    this.ends.push(ev.setDirs(ed));
+    // this.targetDir = ed[0];
+    this.sources.push(sv.setDirs(sd));
+    this.targets.push(ev.setDirs(ed));
     handleMargin(this, pathMargin);
     drawToTarget(this);
   }
 
-  getSource = () => this.starts[this.starts.length - 1];
-  getTarget = () => this.ends[this.ends.length - 1];
+  getSource = () => this.sources[this.sources.length - 1];
+  getTarget = () => this.targets[this.targets.length - 1];
   getEdges = () => [this.getSource(), this.getTarget()];
 
+  getSources = () => this.sources;
+  getTargets = () => this.targets;
+
   pushSource = (v: Vector) => {
-    this.starts.push(v);
+    this.sources.push(v);
     return v;
   };
   pushTarget = (v: Vector) => {
-    this.ends.push(v);
+    this.targets.push(v);
     return v;
   };
 
-  getPoints = () => [...this.starts.toList(), ...this.ends.rev().toList()];
+  getPoints = () => [...this.sources.toList(), ...this.targets.rev().toList()];
 }
 
 export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[], pathMargin) => {
