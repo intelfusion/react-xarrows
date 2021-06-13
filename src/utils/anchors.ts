@@ -65,7 +65,7 @@ export const prepareAnchor = (anchor: anchorType, anchorPos: dimensionType) => {
       if (!anchorChoice.offset.bottomness) anchorChoice.offset.bottomness = 0;
       if (!anchorChoice.offset.rightness) anchorChoice.offset.rightness = 0;
 
-      if (!anchorChoice.facingDir) anchorChoice.facingDir = ['auto'];
+      if (!anchorChoice.facingDir || anchorChoice.facingDir.length == 0) anchorChoice.facingDir = ['auto'];
       if (!Array.isArray(anchorChoice.facingDir)) anchorChoice.facingDir = [anchorChoice.facingDir];
       //filter not allowed dirs
       anchorChoice.facingDir = anchorChoice.facingDir.filter((d) => tFacingDir.includes(d));

@@ -255,7 +255,7 @@ export const EAD = {
   left: 'right',
 } as const;
 
-const chooseSimplestPath = (sv: Vector, ev: Vector): [Dir[], Dir[]] => {
+const chooseSimplestPath = (sv: Vector, ev: Vector, pathMargin: number): [Dir[], Dir[]] => {
   let vse = ev.sub(sv);
 
   // the rectangle vectors and dirs
@@ -273,22 +273,30 @@ const chooseSimplestPath = (sv: Vector, ev: Vector): [Dir[], Dir[]] => {
   let svDirs: Dir[];
   let evDirs: Dir[];
 
-  // todo: choose connect to end from right if possible
-
   if (svDirsIn.length === 0) svDirs = svDirsOut;
   else svDirs = svDirsIn;
   if (evDirsIn.length === 0) evDirs = evDirsOut;
   else evDirs = evDirsIn;
 
   // prefer r curve if exists (over more complicated path like z or adding margin)
-  for (let svDir of svDirs) {
-    for (let evDir of evDirs) {
-      if (svDir.abs().eq(evDir.mirror().abs())) {
-        // console.log('r chosen!', svDir, evDir);
+  for (let svDir of svDirsIn) {
+    for (let evDir of evDirsIn) {
+      if (svDir.abs().eq(evDir.mirror().abs()) && vr.absSize() > pathMargin) {
+        console.log('r chosen!', svDir, evDir);
         return [[svDir], [evDir]];
       }
     }
   }
+  // prefer z curve over margins
+  for (let svDir of svDirsIn) {
+    for (let evDir of evDirsIn) {
+      if (svDir.eq(evDir)) {
+        console.log('z chosen!', svDir, evDir);
+        return [[svDir], [evDir]];
+      }
+    }
+  }
+
   return [svDirs, evDirs];
 };
 
@@ -299,7 +307,7 @@ class SmartGrid {
   // targetDir: Dir;
 
   constructor(sv: Vector, ev: Vector, rects: Rectangle[], pathMargin) {
-    let [sd, ed] = chooseSimplestPath(sv, ev);
+    let [sd, ed] = chooseSimplestPath(sv, ev, pathMargin);
     // this.targetDir = ed[0];
     this.sources.push(sv.setDirs(sd));
     this.targets.push(ev.setDirs(ed));
@@ -367,7 +375,7 @@ export const points2Vector = (
 };
 
 if (require.main === module) {
-  console.log(new Dir(1, -1).toDegree());
+  // console.log(new Dir(1, -1).toDegree());
 
   // testPoints2Vector();
   const test = () => {
@@ -384,16 +392,7 @@ if (require.main === module) {
   };
   // test();
 
-  //
-  // const testPoints2Vector = () => {
-  //   console.log(points2Vector(1000, 1000, 'top', ['inwards', 'left']));
-  // };
-  //
-  // const dir2Deg = (dir: Dir) => {
-  //   return Math.sin(dir.x);
-  // };
-  //
-  // const deg2Rad = (deg: number) => (deg * Math.PI) / 180;
+  console.log(points2Vector(1000, 1000, 'top', []));
 
   // console.log(dir2Deg(new Dir(1, 0)));
   // console.log(console.log(new Dir(100, 200)));
