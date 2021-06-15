@@ -21,7 +21,9 @@ import {
   tSvgElems,
   xarrowPropsType,
 } from './types';
-import { calcSmartPath, EAD, points2Vector, pointsToLines, SAD, Vector } from './utils/paths-new';
+import { calcSmartPath, chooseSimplestPath, EAD, points2Vector, pointsToLines, SAD, Vector } from './utils/paths-new';
+
+const pathMargin = 30;
 
 const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   let {
@@ -325,21 +327,21 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       y1 = excUp + yRev * -dy,
       y2 = absDy + excUp + yRev * dy;
 
-    let sv, ev;
+    let sv: Vector, ev: Vector;
     let sSides = chosenStart.anchor.facingDir as _faceDirType[],
       eSides = chosenEnd.anchor.facingDir as _faceDirType[];
     sSides = sSides.map((side) => (side === 'auto' ? 'outwards' : side));
     eSides = eSides.map((side) => (side === 'auto' ? 'inwards' : side));
 
+    // figure the different possibilities to connect
     sv = points2Vector(x1, y1, chosenStart.anchor.position, sSides as Exclude<_faceDirType, 'auto'>[]);
     ev = points2Vector(x2, y2, chosenEnd.anchor.position, eSides as Exclude<_faceDirType, 'auto'>[]);
-    let smartGrid = calcSmartPath(sv, ev, [], 30);
-    let headVector = ev;
-    let tailVector = sv;
-    let headDir = headVector.faceDirs[0];
-    let tailDir = tailVector.faceDirs[0].reverse();
-    headOrient = headDir.toDegree();
-    tailOrient = tailDir.toDegree();
+    // choose the simplest one
+    let [sd, ed] = chooseSimplestPath(sv, ev, pathMargin);
+    sv = sv.setDirs(sd);
+    ev = ev.setDirs(ed);
+    let sdd = sd[0];
+    let edd = ed[0];
 
     // offset head and tail function
     const getEdgeOffset = (edgeBox, fEdgeSize, edgeDir) => {
@@ -356,16 +358,24 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let headOffset = { x: 0, y: 0 },
       perHeadOffset;
     if (headRef.current) {
-      [fHeadSize, headOffset, perHeadOffset] = getEdgeOffset(headBox, fHeadSize, headDir);
-      smartGrid.targets[0] = headVector.add(headDir.mul(perHeadOffset * headShape.offsetForward));
+      [fHeadSize, headOffset, perHeadOffset] = getEdgeOffset(headBox, fHeadSize, edd);
+      ev = ev.add(edd.mul(perHeadOffset * headShape.offsetForward));
     }
 
     let tailOffset = { x: 0, y: 0 },
       perTailOffset;
     if (tailRef.current) {
-      [fTailSize, tailOffset, perTailOffset] = getEdgeOffset(tailBox, fTailSize, tailDir);
-      smartGrid.sources[0] = tailVector.add(tailDir.mul(perTailOffset * tailShape.offsetForward));
+      [fTailSize, tailOffset, perTailOffset] = getEdgeOffset(tailBox, fTailSize, sdd);
+      sv = sv.add(sdd.mul(perTailOffset * tailShape.offsetForward));
     }
+
+    let smartGrid = calcSmartPath(sv, ev, [], pathMargin);
+    let headVector = ev;
+    let tailVector = sv;
+    let headDir = headVector.faceDirs[0];
+    let tailDir = tailVector.faceDirs[0].reverse();
+    headOrient = headDir.toDegree();
+    tailOrient = tailDir.toDegree();
 
     let points = smartGrid.getPoints();
     let arrowPath = pointsToLines(points);
@@ -445,6 +455,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     animRepeatCount = 'indefinite';
     animEndValue = 0;
   }
+
+  // console.log(st.lineLength);
 
   // update refs to elements if needed
   useLayoutEffect(() => {

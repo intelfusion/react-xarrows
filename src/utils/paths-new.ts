@@ -268,7 +268,7 @@ export const EAD = {
   left: 'right',
 } as const;
 
-const chooseSimplestPath = (sv: Vector, ev: Vector, pathMargin: number): [Dir[], Dir[]] => {
+export const chooseSimplestPath = (sv: Vector, ev: Vector, pathMargin: number): [Dir[], Dir[]] => {
   let vse = ev.sub(sv);
 
   // the rectangle vectors and dirs
@@ -320,10 +320,11 @@ class SmartGrid {
   // targetDir: Dir;
 
   constructor(sv: Vector, ev: Vector, rects: Rectangle[], pathMargin) {
-    let [sd, ed] = chooseSimplestPath(sv, ev, pathMargin);
-    // this.targetDir = ed[0];
-    this.sources.push(sv.setDirs(sd));
-    this.targets.push(ev.setDirs(ed));
+    // let [sd, ed] = chooseSimplestPath(sv, ev, pathMargin);
+    // this.sources.push(sv.setDirs(sd));
+    // this.targets.push(ev.setDirs(ed));
+    this.sources.push(sv);
+    this.targets.push(ev);
     handleMargin(this, pathMargin);
     drawToTarget(this);
   }
