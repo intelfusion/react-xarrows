@@ -76,6 +76,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
   // const [headBox, setHeadBox] = useState({ x: 0, y: 0, width: 1, height: 1 });
   // const [tailBox, setTailBox] = useState({ x: 0, y: 0, width: 1, height: 1 });
+  const headBox = useRef({ x: 0, y: 0, width: 1, height: 1 });
+  const tailBox = useRef({ x: 0, y: 0, width: 1, height: 1 });
 
   // const headBox = useRef({ x: 0, y: 0, width: 1, height: 1 });
   // const tailBox = useRef({ x: 0, y: 0, width: 1, height: 1 });
@@ -275,8 +277,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     // choose the smallest path for 2 ponts from these possibilities.
     let { chosenStart, chosenEnd } = getShortestLine(startPoints, endPoints);
 
-    let startAnchorName = chosenStart.anchor.position,
-      endAnchorName = chosenEnd.anchor.position;
     let startPoint = pick(chosenStart, ['x', 'y']),
       endPoint = pick(chosenEnd, ['x', 'y']);
 
@@ -341,17 +341,9 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     headOrient = headDir.toDegree();
     tailOrient = tailDir.toDegree();
 
-    // const { current: _headBox } = headBox;
-    // let xHeadOffset = 0;
-    // let yHeadOffset = 0;
-    // let xTailOffset = 0;
-    // let yTailOffset = 0;
-
-    const getEdgeOffset = (edgeRef, fEdgeSize, edgeDir) => {
-      // normalize the size of the svg shape
-      let { x: xBoxEdge, y: yBoxEdge, width: widthBoxEdge, height: heightBoxEdge } = edgeRef.current?.getBBox({
-        stroke: true,
-      }) ?? { x: 0, y: 0, width: 0, height: 0 };
+    // offset head and tail function
+    const getEdgeOffset = (edgeBox, fEdgeSize, edgeDir) => {
+      let { x: xBoxEdge, y: yBoxEdge, width: widthBoxEdge, height: heightBoxEdge } = edgeBox.current;
       fEdgeSize /= Math.min(widthBoxEdge, heightBoxEdge);
       //offset the svg of the head
       let edgeOffsetVector = new Vector(0, 0)
@@ -364,55 +356,19 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let headOffset = { x: 0, y: 0 },
       perHeadOffset;
     if (headRef.current) {
-      [fHeadSize, headOffset, perHeadOffset] = getEdgeOffset(headRef, fHeadSize, headDir);
+      [fHeadSize, headOffset, perHeadOffset] = getEdgeOffset(headBox, fHeadSize, headDir);
       smartGrid.targets[0] = headVector.add(headDir.mul(perHeadOffset * headShape.offsetForward));
     }
 
     let tailOffset = { x: 0, y: 0 },
       perTailOffset;
     if (tailRef.current) {
-      [fTailSize, tailOffset, perTailOffset] = getEdgeOffset(tailRef, fTailSize, tailDir);
+      [fTailSize, tailOffset, perTailOffset] = getEdgeOffset(tailBox, fTailSize, tailDir);
       smartGrid.sources[0] = tailVector.add(tailDir.mul(perTailOffset * tailShape.offsetForward));
     }
 
-    // // normalize the size of the svg shape
-    // let { x: xBoxHead, y: yBoxHead, width: widthBoxHead, height: heightBoxHead } = headRef.current?.getBBox({
-    //   stroke: true,
-    // });
-    // fHeadSize /= Math.min(widthBoxHead, heightBoxHead);
-    // //offset the svg of the head
-    // let headOffsetVector = new Vector(0, 0)
-    //   .add(headDir.mul(-(xBoxHead + widthBoxHead) * fHeadSize))
-    //   .add(headDir.rotate(90).mul(-(yBoxHead + heightBoxHead / 2) * fHeadSize));
-    // let headOffset = pick(headOffsetVector, ['x', 'y']);
-    // smartGrid.targets[0] = headVector.add(headDir.mul(-(xBoxHead + widthBoxHead) * fHeadSize));
-
-    // // normalize the size of the svg shape
-    // let { x: xBoxTail, y: yBoxTail, width: widthBoxTail, height: heightBoxTail } = tailRef.current?.getBBox({
-    //   stroke: true,
-    // });
-    // fTailSize /= Math.min(widthBoxTail, heightBoxTail);
-    // //offset the svg of the tail
-    // let tailOffsetVector = new Vector(0, 0)
-    //   .add(tailDir.mul((xBoxTail + widthBoxTail) * fTailSize))
-    //   .add(tailDir.rotate(90).mul((yBoxTail + heightBoxTail / 2) * fTailSize));
-    // let tailOffset = pick(tailOffsetVector, ['x', 'y']);
-    // smartGrid.sources[0] = tailVector.add(tailDir.mul((xBoxTail + widthBoxTail) * fTailSize));
-
     let points = smartGrid.getPoints();
     let arrowPath = pointsToLines(points);
-
-    // let _headOffset = fHeadSize * headOffset;
-    // let _tailOffset = fTailSize * tailOffset;
-    // _headOffset = 10;
-
-    // const headBox = headRef.current?.getBBox({ stroke: true }) ?? { x: 0, y: 0, width: 1, height: 1 };
-    // const headBox = measureFunc(() => headRef.current?.getBBox({ stroke: true }), 'getBBox') ?? {
-    //   x: 0,
-    //   y: 0,
-    //   width: 0,
-    //   height: 0,
-    // };
 
     const cw = absDx + excLeft + excRight,
       ch = absDy + excUp + excDown;
@@ -448,8 +404,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       excDown,
       headOffset,
       tailOffset,
-      // arrowHeadOffset,
-      // arrowTailOffset,
       startPoints,
       endPoints,
       mainDivPos,
@@ -492,16 +446,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     animEndValue = 0;
   }
 
-  useLayoutEffect(() => {
-    updateIfNeeded();
-
-    // // debug
-    // if (process.env.NODE_ENV === 'development') {
-    //   // log('xarrow has rendered!');
-    //   _render.current += 1;
-    // }
-  });
-
   // update refs to elements if needed
   useLayoutEffect(() => {
     startRef.current = getElementByPropGiven(props.start);
@@ -515,13 +459,23 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     if (lineRef.current) setSt((prevSt) => ({ ...prevSt, lineLength: lineRef.current.getTotalLength() }));
   }, [lineRef.current]);
 
-  // // for adjustments of custom svg shapes
-  // useLayoutEffect(() => {
-  //   headBox.current = headRef.current?.getBBox({ stroke: true }) ?? { x: 0, y: 0, width: 1, height: 1 };
-  // }, [props.headShape]);
-  // useLayoutEffect(() => {
-  //   tailBox.current = tailRef.current?.getBBox({ stroke: true }) ?? { x: 0, y: 0, width: 1, height: 1 };
-  // }, [props.tailShape]);
+  // for adjustments of custom svg shapes
+  useLayoutEffect(() => {
+    headBox.current = headRef.current?.getBBox({ stroke: true }) ?? { x: 0, y: 0, width: 1, height: 1 };
+  }, [props.headShape]);
+  useLayoutEffect(() => {
+    tailBox.current = tailRef.current?.getBBox({ stroke: true }) ?? { x: 0, y: 0, width: 1, height: 1 };
+  }, [props.tailShape]);
+
+  useLayoutEffect(() => {
+    updateIfNeeded();
+
+    // // debug
+    // if (process.env.NODE_ENV === 'development') {
+    //   // log('xarrow has rendered!');
+    //   _render.current += 1;
+    // }
+  });
 
   // set all props on first render
   useEffect(() => {

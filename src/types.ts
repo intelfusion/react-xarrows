@@ -15,7 +15,7 @@ export const arrowShapes = {
     svgProps: {
       d: `M 0,0.25 A 0.125,0.125 0,0,1 0.5,0.25 A 0.125,0.125 0,0,1 1,0.25 Q 1,0.625 0.5,1 Q 0,0.625 0,0.25 z`,
     },
-    offsetForward: 0.1,
+    offsetForward: 0.92,
   },
   circle: {
     svgElem: 'circle',
@@ -25,7 +25,7 @@ export const arrowShapes = {
       cy: 0.5,
       // children: <animate attributeName="r" values={'0.25;0.5;0.25'} dur="1s" repeatCount={'indefinite'} />,
     },
-    offsetForward: 0,
+    offsetForward: 1,
   },
   test: { svgElem: 'path', svgProps: { d: `M 1 1 L 3 2 L 1 3 L 1.5 2 z` }, offsetForward: 1 },
   arrow2: {
