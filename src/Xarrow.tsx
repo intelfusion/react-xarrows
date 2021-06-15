@@ -3,7 +3,7 @@ import isEqual from 'lodash.isequal';
 import pick from 'lodash.pick';
 import omit from 'lodash.omit';
 import { getElementByPropGiven } from './utils';
-import { pointsToLines, smoothBezierPoints } from './utils/buzierSmooth';
+import { smoothBezierPoints } from './utils/buzierSmooth';
 import PT from 'prop-types';
 import { buzzierMinSols, bzFunction } from './utils/buzzier';
 import { getShortestLine, prepareAnchor } from './utils/anchors';
@@ -21,7 +21,7 @@ import {
   tSvgElems,
   xarrowPropsType,
 } from './types';
-import { calcSmartPath, EAD, points2Vector, SAD, Vector } from './utils/paths-new';
+import { calcSmartPath, EAD, points2Vector, pointsToLines, SAD, Vector } from './utils/paths-new';
 
 const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   let {
@@ -56,10 +56,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     SVGcanvasStyle = {},
     _extendSVGcanvas = 0,
     _debug = false,
-    _cpx1Offset = 0,
-    _cpy1Offset = 0,
-    _cpx2Offset = 0,
-    _cpy2Offset = 0,
     ...extraProps
   } = props;
   const varProps = omit(props, ['start', 'end']);
@@ -103,19 +99,12 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     dy: 0, // the y difference between 'start' anchor to 'end' anchor
     absDx: 0, // the x length(positive) difference
     absDy: 0, // the y length(positive) difference
-    cpx1: 0, // control points - control the curviness of the line
-    cpy1: 0,
-    cpx2: 0,
-    cpy2: 0,
     headOrient: 0, // determines to what side the arrowhead will point
     tailOrient: 0, // determines to what side the arrow tail will point
-    labelStartPos: { x: 0, y: 0 },
-    labelMiddlePos: { x: 0, y: 0 },
-    labelEndPos: { x: 0, y: 0 },
-    arrowEnd: { x: 0, y: 0 },
-    arrowHeadOffset: { x: 0, y: 0 },
-    arrowTailOffset: { x: 0, y: 0 },
-    headOffset: 0,
+    headOffset: { x: 0, y: 0 },
+    tailOffset: { x: 0, y: 0 },
+    // arrowHeadOffset: { x: 0, y: 0 },
+    // arrowTailOffset: { x: 0, y: 0 },
     excRight: 0, //expand canvas to the right
     excLeft: 0, //expand canvas to the left
     excUp: 0, //expand canvas upwards
@@ -213,7 +202,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       }
     }
     svgEdge = svgEdge as svgCustomEdgeType;
-    if (svgEdge?.offsetForward === undefined) svgEdge.offsetForward = 0.25;
+    if (svgEdge?.offsetForward === undefined) svgEdge.offsetForward = 0.75;
     if (svgEdge?.svgElem === undefined) svgEdge.svgElem = 'path';
     if (svgEdge?.svgProps === undefined) svgEdge.svgProps = arrowShapes.arrow1.svgProps;
     return svgEdge;
@@ -221,26 +210,16 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   headShape = defaultEdge(headShape);
   tailShape = defaultEdge(tailShape);
 
-  const getPos = (elem: HTMLElement) => {
-    let { left, top, right, bottom } = elem?.getBoundingClientRect();
-    let style = getComputedStyle(elem);
-    let leftStyle = Number(style.left.slice(0, -2));
-    let topStyle = Number(style.top.slice(0, -2));
-    return {
-      x: left - leftStyle,
-      y: top - topStyle,
-      right: right - leftStyle,
-      bottom: bottom - topStyle,
-    };
-  };
-
   const getSvgPos = () => {
     // if (!mainDivRef.current) return { x: 0, y: 0 };
-    let { left: svgX, top: svgY } = svgRef.current.getBoundingClientRect();
-    let svgStyle = getComputedStyle(svgRef.current);
-    let svgStyleLeft = Number(svgStyle.left.slice(0, -2));
-    // console.log(svgStyle.left, svgStyleLeft);
-    let svgStyleTop = Number(svgStyle.top.slice(0, -2));
+    let { left: svgX, top: svgY } = svgRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 };
+    let svgStyleLeft = 0,
+      svgStyleTop = 0;
+    if (svgRef.current) {
+      let svgStyle = getComputedStyle(svgRef.current);
+      svgStyleLeft = Number(svgStyle.left.slice(0, -2));
+      svgStyleTop = Number(svgStyle.top.slice(0, -2));
+    }
     return {
       x: svgX - svgStyleLeft,
       y: svgY - svgStyleTop,
@@ -248,7 +227,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   };
 
   const getElemPos = (elem: HTMLElement) => {
-    const pos = elem.getBoundingClientRect();
+    const pos = elem?.getBoundingClientRect() ?? { left: 0, top: 0, right: 0, bottom: 0 };
     return {
       x: pos.left,
       y: pos.top,
@@ -264,6 +243,15 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     // let end = getPos(endRef.current);
     return { start, end };
   };
+
+  // const xOffsetHead = st.x2 - st.arrowHeadOffset.x;
+  // const yOffsetHead = st.y2 - st.arrowHeadOffset.y;
+  // const xOffsetTail = st.x1 - st.arrowTailOffset.x;
+  // const yOffsetTail = st.y1 - st.arrowTailOffset.y;
+  // const xOffsetHead = st.x2 - 10;
+  // const yOffsetHead = st.y2 - 0;
+  // const xOffsetTail = st.x1 - 0;
+  // const yOffsetTail = st.y1 - 0;
 
   /**
    * The Main logic of path calculation for the arrow.
@@ -306,27 +294,9 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let ySign = dy > 0 ? 1 : -1;
     let xRev = dx < 0 ? 1 : 0;
     let yRev = dy < 0 ? 1 : 0;
-    let [headOffset, tailOffset] = [headShape.offsetForward, tailShape.offsetForward];
+    // let [headOffset, tailOffset] = [headShape.offsetForward, tailShape.offsetForward];
     let fHeadSize = headSize * strokeWidth; //factored head size
     let fTailSize = tailSize * strokeWidth; //factored head size
-
-    // const { current: _headBox } = headBox;
-    let xHeadOffset = 0;
-    let yHeadOffset = 0;
-    let xTailOffset = 0;
-    let yTailOffset = 0;
-
-    let _headOffset = fHeadSize * headOffset;
-    let _tailOffset = fTailSize * tailOffset;
-    _headOffset = 10;
-
-    // const headBox = headRef.current?.getBBox({ stroke: true }) ?? { x: 0, y: 0, width: 1, height: 1 };
-    // const headBox = measureFunc(() => headRef.current?.getBBox({ stroke: true }), 'getBBox') ?? {
-    //   x: 0,
-    //   y: 0,
-    //   width: 0,
-    //   height: 0,
-    // };
 
     let cu = Number(curveness);
     gridBreak = Number(gridBreak);
@@ -354,20 +324,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       x2 = absDx + excLeft + xRev * dx,
       y1 = excUp + yRev * -dy,
       y2 = absDy + excUp + yRev * dy;
-    // if (dx < 0) [x1, x2] = [x2, x1];
-    // if (dy < 0) [y1, y2] = [y2, y1];
 
-    let cpx1 = x1 + _cpx1Offset,
-      cpy1 = y1 + _cpy1Offset,
-      cpx2 = x2 + _cpx2Offset,
-      cpy2 = y2 + _cpy2Offset;
-
-    let arrowHeadOffset = { x: xHeadOffset, y: yHeadOffset };
-    let arrowTailOffset = { x: xTailOffset, y: yTailOffset };
-
-    let arrowPath = `M ${x1} ${y1}`;
-    // let startFaceDir = chosenStart;
-    // let [v1,v2] = points2Vector(x1, y1, x2, y2, chosenStart.anchor.position, chosenEnd.anchor.position);
     let sv, ev;
     let sSides = chosenStart.anchor.facingDir as _faceDirType[],
       eSides = chosenEnd.anchor.facingDir as _faceDirType[];
@@ -377,24 +334,98 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     sv = points2Vector(x1, y1, chosenStart.anchor.position, sSides as Exclude<_faceDirType, 'auto'>[]);
     ev = points2Vector(x2, y2, chosenEnd.anchor.position, eSides as Exclude<_faceDirType, 'auto'>[]);
     let smartGrid = calcSmartPath(sv, ev, [], 30);
-    let points = smartGrid.getPoints();
-    headOrient = smartGrid.getTarget().faceDirs[0].toDegree();
-    tailOrient = smartGrid.getSources()[0].faceDirs[0].toDegree();
+    let headVector = ev;
+    let tailVector = sv;
+    let headDir = headVector.faceDirs[0];
+    let tailDir = tailVector.faceDirs[0].reverse();
+    headOrient = headDir.toDegree();
+    tailOrient = tailDir.toDegree();
 
-    arrowPath = pointsToLines(points);
+    // const { current: _headBox } = headBox;
+    // let xHeadOffset = 0;
+    // let yHeadOffset = 0;
+    // let xTailOffset = 0;
+    // let yTailOffset = 0;
+
+    const getEdgeOffset = (edgeRef, fEdgeSize, edgeDir) => {
+      // normalize the size of the svg shape
+      let { x: xBoxEdge, y: yBoxEdge, width: widthBoxEdge, height: heightBoxEdge } = edgeRef.current?.getBBox({
+        stroke: true,
+      }) ?? { x: 0, y: 0, width: 0, height: 0 };
+      fEdgeSize /= Math.min(widthBoxEdge, heightBoxEdge);
+      //offset the svg of the head
+      let edgeOffsetVector = new Vector(0, 0)
+        .add(edgeDir.mul(-(xBoxEdge + widthBoxEdge) * fEdgeSize))
+        .add(edgeDir.rotate(90).mul(-(yBoxEdge + heightBoxEdge / 2) * fEdgeSize));
+      let edgeOffset = pick(edgeOffsetVector, ['x', 'y']);
+      return [fEdgeSize, edgeOffset, -widthBoxEdge * fEdgeSize];
+    };
+
+    let headOffset = { x: 0, y: 0 },
+      perHeadOffset;
+    if (headRef.current) {
+      [fHeadSize, headOffset, perHeadOffset] = getEdgeOffset(headRef, fHeadSize, headDir);
+      smartGrid.targets[0] = headVector.add(headDir.mul(perHeadOffset * headShape.offsetForward));
+    }
+
+    let tailOffset = { x: 0, y: 0 },
+      perTailOffset;
+    if (tailRef.current) {
+      [fTailSize, tailOffset, perTailOffset] = getEdgeOffset(tailRef, fTailSize, tailDir);
+      smartGrid.sources[0] = tailVector.add(tailDir.mul(perTailOffset * tailShape.offsetForward));
+    }
+
+    // // normalize the size of the svg shape
+    // let { x: xBoxHead, y: yBoxHead, width: widthBoxHead, height: heightBoxHead } = headRef.current?.getBBox({
+    //   stroke: true,
+    // });
+    // fHeadSize /= Math.min(widthBoxHead, heightBoxHead);
+    // //offset the svg of the head
+    // let headOffsetVector = new Vector(0, 0)
+    //   .add(headDir.mul(-(xBoxHead + widthBoxHead) * fHeadSize))
+    //   .add(headDir.rotate(90).mul(-(yBoxHead + heightBoxHead / 2) * fHeadSize));
+    // let headOffset = pick(headOffsetVector, ['x', 'y']);
+    // smartGrid.targets[0] = headVector.add(headDir.mul(-(xBoxHead + widthBoxHead) * fHeadSize));
+
+    // // normalize the size of the svg shape
+    // let { x: xBoxTail, y: yBoxTail, width: widthBoxTail, height: heightBoxTail } = tailRef.current?.getBBox({
+    //   stroke: true,
+    // });
+    // fTailSize /= Math.min(widthBoxTail, heightBoxTail);
+    // //offset the svg of the tail
+    // let tailOffsetVector = new Vector(0, 0)
+    //   .add(tailDir.mul((xBoxTail + widthBoxTail) * fTailSize))
+    //   .add(tailDir.rotate(90).mul((yBoxTail + heightBoxTail / 2) * fTailSize));
+    // let tailOffset = pick(tailOffsetVector, ['x', 'y']);
+    // smartGrid.sources[0] = tailVector.add(tailDir.mul((xBoxTail + widthBoxTail) * fTailSize));
+
+    let points = smartGrid.getPoints();
+    let arrowPath = pointsToLines(points);
+
+    // let _headOffset = fHeadSize * headOffset;
+    // let _tailOffset = fTailSize * tailOffset;
+    // _headOffset = 10;
+
+    // const headBox = headRef.current?.getBBox({ stroke: true }) ?? { x: 0, y: 0, width: 1, height: 1 };
+    // const headBox = measureFunc(() => headRef.current?.getBBox({ stroke: true }), 'getBBox') ?? {
+    //   x: 0,
+    //   y: 0,
+    //   width: 0,
+    //   height: 0,
+    // };
 
     const cw = absDx + excLeft + excRight,
       ch = absDy + excUp + excDown;
     cx0 -= excLeft;
     cy0 -= excUp;
 
-    //labels
-    const bzx = bzFunction(x1, cpx1, cpx2, x2);
-    const bzy = bzFunction(y1, cpy1, cpy2, y2);
-    const labelStartPos = { x: bzx(0.01), y: bzy(0.01) };
-    const labelMiddlePos = { x: bzx(0.5), y: bzy(0.5) };
-    const labelEndPos = { x: bzx(0.99), y: bzy(0.99) };
-    const arrowEnd = { x: bzx(1), y: bzy(1) };
+    // //labels
+    // const bzx = bzFunction(x1, cpx1, cpx2, x2);
+    // const bzy = bzFunction(y1, cpy1, cpy2, y2);
+    // const labelStartPos = { x: bzx(0.01), y: bzy(0.01) };
+    // const labelMiddlePos = { x: bzx(0.5), y: bzy(0.5) };
+    // const labelEndPos = { x: bzx(0.99), y: bzy(0.99) };
+    // const arrowEnd = { x: bzx(1), y: bzy(1) };
 
     setSt({
       cx0,
@@ -405,27 +436,20 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       y2,
       cw,
       ch,
-      cpx1,
-      cpy1,
-      cpx2,
-      cpy2,
       dx,
       dy,
       absDx,
       absDy,
       headOrient,
       tailOrient,
-      labelStartPos,
-      labelMiddlePos,
-      labelEndPos,
-      arrowEnd,
       excLeft,
       excRight,
       excUp,
       excDown,
-      headOffset: _headOffset,
-      arrowHeadOffset,
-      arrowTailOffset,
+      headOffset,
+      tailOffset,
+      // arrowHeadOffset,
+      // arrowTailOffset,
       startPoints,
       endPoints,
       mainDivPos,
@@ -437,11 +461,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       arrowPath,
     });
   };
-
-  const xOffsetHead = st.x2 - st.arrowHeadOffset.x;
-  const yOffsetHead = st.y2 - st.arrowHeadOffset.y;
-  const xOffsetTail = st.x1 - st.arrowTailOffset.x;
-  const yOffsetTail = st.y1 - st.arrowTailOffset.y;
 
   let dashoffset = dashStroke + dashNone;
   if (animDashSpeed < 0) {
@@ -519,7 +538,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       const handleDrawAmimEnd = () => {
         setDrawAnimEnded(true);
         // @ts-ignore
-        headOpacityAnimRef.current.beginElement();
+        headOpacityAnimRef.current?.beginElement();
         lineDashAnimRef.current?.beginElement();
       };
       const handleDrawAmimBegin = () => (headRef.current.style.opacity = '0');
@@ -556,10 +575,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
             ref={svgRef}
             width={st.cw}
             height={st.ch}
-            // width="100%"
-            // height="100%"
-            // preserveAspectRatio="none"
-            // viewBox={'auto'}
             style={{
               position: 'absolute',
               left: st.cx0,
@@ -620,11 +635,12 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
             {showTail ? (
               <tailShape.svgElem
                 // d={normalArrowShape}
+                ref={tailRef as any}
                 fill={tailColor}
                 pointerEvents="auto"
-                transform={`translate(${xOffsetTail},${yOffsetTail}) rotate(${st.tailOrient}) scale(${st.fTailSize})`}
-                // transform={`translate(${xOffsetTail},${yOffsetTail}) rotate(${st.tailOrient}) scale(${fTailSize})`}
-                // transform={`translate(${xOffsetHead},${yOffsetHead}) rotate(${st.headOrient})`}
+                transform={`translate(${st.x1 + st.tailOffset.x},${st.y1 + st.tailOffset.y}) rotate(${
+                  st.tailOrient
+                }) scale(${st.fTailSize})`}
                 {...tailShape.svgProps}
                 {...(passProps as any)}
                 {...arrowTailProps}
@@ -635,10 +651,11 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
             {showHead ? (
               <headShape.svgElem
                 ref={headRef as any}
-                // d={normalArrowShape}
                 fill={headColor}
                 pointerEvents="auto"
-                transform={`translate(${xOffsetHead},${yOffsetHead}) rotate(${st.headOrient}) scale(${st.fHeadSize})`}
+                transform={`translate(${st.x2 + st.headOffset.x},${st.y2 + st.headOffset.y}) rotate(${
+                  st.headOrient
+                }) scale(${st.fHeadSize})`}
                 opacity={animateDrawing && !drawAnimEnded ? 0 : 1}
                 {...headShape.svgProps}
                 {...(passProps as any)}
@@ -659,9 +676,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
             {/* debug elements */}
             {_debug ? (
               <>
-                {/* control points circles */}
-                <circle r="5" cx={st.cpx1} cy={st.cpy1} fill="green" />
-                <circle r="5" cx={st.cpx2} cy={st.cpy2} fill="blue" />
                 {/* start to end rectangle wrapper */}
                 <rect
                   x={st.excLeft}
@@ -676,43 +690,43 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
             ) : null}
           </svg>
 
-          {labelStart ? (
-            <div
-              style={{
-                transform: st.dx < 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
-                width: 'max-content',
-                position: 'absolute',
-                left: st.cx0 + st.labelStartPos.x,
-                top: st.cy0 + st.labelStartPos.y - strokeWidth - 5,
-              }}>
-              {labelStart}
-            </div>
-          ) : null}
-          {labelMiddle ? (
-            <div
-              style={{
-                display: 'table',
-                width: 'max-content',
-                transform: 'translate(-50% , -50%)',
-                position: 'absolute',
-                left: st.cx0 + st.labelMiddlePos.x,
-                top: st.cy0 + st.labelMiddlePos.y,
-              }}>
-              {labelMiddle}
-            </div>
-          ) : null}
-          {labelEnd ? (
-            <div
-              style={{
-                transform: st.dx > 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
-                width: 'max-content',
-                position: 'absolute',
-                left: st.cx0 + st.labelEndPos.x,
-                top: st.cy0 + st.labelEndPos.y + strokeWidth + 5,
-              }}>
-              {labelEnd}
-            </div>
-          ) : null}
+          {/*{labelStart ? (*/}
+          {/*  <div*/}
+          {/*    style={{*/}
+          {/*      transform: st.dx < 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',*/}
+          {/*      width: 'max-content',*/}
+          {/*      position: 'absolute',*/}
+          {/*      left: st.cx0 + st.labelStartPos.x,*/}
+          {/*      top: st.cy0 + st.labelStartPos.y - strokeWidth - 5,*/}
+          {/*    }}>*/}
+          {/*    {labelStart}*/}
+          {/*  </div>*/}
+          {/*) : null}*/}
+          {/*{labelMiddle ? (*/}
+          {/*  <div*/}
+          {/*    style={{*/}
+          {/*      display: 'table',*/}
+          {/*      width: 'max-content',*/}
+          {/*      transform: 'translate(-50% , -50%)',*/}
+          {/*      position: 'absolute',*/}
+          {/*      left: st.cx0 + st.labelMiddlePos.x,*/}
+          {/*      top: st.cy0 + st.labelMiddlePos.y,*/}
+          {/*    }}>*/}
+          {/*    {labelMiddle}*/}
+          {/*  </div>*/}
+          {/*) : null}*/}
+          {/*{labelEnd ? (*/}
+          {/*  <div*/}
+          {/*    style={{*/}
+          {/*      transform: st.dx > 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',*/}
+          {/*      width: 'max-content',*/}
+          {/*      position: 'absolute',*/}
+          {/*      left: st.cx0 + st.labelEndPos.x,*/}
+          {/*      top: st.cy0 + st.labelEndPos.y + strokeWidth + 5,*/}
+          {/*    }}>*/}
+          {/*    {labelEnd}*/}
+          {/*  </div>*/}
+          {/*) : null}*/}
           {_debug ? (
             <>
               {/* possible anchor connections */}

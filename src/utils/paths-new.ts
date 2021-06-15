@@ -1,5 +1,6 @@
 import { number } from 'prop-types';
 import { _faceDirType, anchorNamedType } from '../types';
+import pick from 'lodash.pick';
 
 // type VectType = Vector|DVector
 const operatorFunc = (p: Vector, p2: Vector | number, operator) => {
@@ -17,6 +18,9 @@ const operators = {
 };
 
 // const pathMargin = 15;
+
+const deg2Rad = (deg: number) => (deg / 180) * Math.PI;
+const roundTo = (num: number, level = 4) => parseFloat(num.toFixed(level));
 
 export class Vector {
   x: number;
@@ -50,6 +54,15 @@ export class Vector {
 
   dir = () => new Dir(this.x, this.y);
   setDirs = (d: Dir[]) => new Vector(this, d);
+
+  rotate = (deg) => {
+    let rad = deg2Rad(deg);
+    return new Vector(
+      roundTo(this.x * Math.cos(rad) - this.y * Math.sin(rad)),
+      roundTo(this.x * Math.sin(rad) + this.y * Math.cos(rad))
+    );
+  };
+  // eq = (p: Dir) => p.x === this.x && p.y === this.y;
 }
 
 // receives a vector and returns direction unit
@@ -86,7 +99,7 @@ class Dir extends Vector {
 
   toDegree = () => (Math.atan2(this.y, this.x) * 180) / Math.PI;
 
-  // eq = (p: Dir) => p.x === this.x && p.y === this.y;
+  //rotate a point around the root (0,0) point
 }
 
 /**
@@ -163,14 +176,14 @@ const handleMargin = (grid: SmartGrid, pathMargin: number) => {
   let edr = new Dir(evr);
 
   if (svDirsIn.length === 0) {
-    console.log('start because outside');
+    // console.log('start because outside');
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(svDir));
     grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs(dirs));
     return handleMargin(grid, pathMargin);
   }
 
   if (evDirsIn.length === 0) {
-    console.log('end because outside');
+    // console.log('end because outside');
     let dirs = [xd, yd].filter((d) => !d.reverse().eq(evDir));
     grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs(dirs));
     return handleMargin(grid, pathMargin);
@@ -180,11 +193,11 @@ const handleMargin = (grid: SmartGrid, pathMargin: number) => {
     let factor = 1;
     if (svDir.eq(evDir)) factor = 2;
     if (svf.absSize() < pathMargin * factor) {
-      console.log('start because small');
+      // console.log('start because small');
       grid.pushSource(sv.add(svDir.mul(pathMargin)).setDirs([sdr]));
     }
     if (evf.absSize() < pathMargin * factor) {
-      console.log('end because small');
+      // console.log('end because small');
       grid.pushTarget(ev.sub(evDir.mul(pathMargin)).setDirs([edr]));
     }
   }
@@ -218,18 +231,18 @@ const drawToTarget = (grid: SmartGrid): void => {
   //here the direction of svDir and evDir will always be inwards the rectangle
 
   if (svr.absSize() === 0 && svDir.eq(evDir) && svDir.eq(sdf)) {
-    console.log('path connected');
+    // console.log('path connected');
     return;
   }
   if (svDir.eq(evDir)) {
-    console.log('Z curve');
+    // console.log('Z curve');
     let svNext = sv.add(svf.dev(2));
     grid.pushSource(svNext);
     grid.pushSource(svNext.add(svr).setDirs([sdf]));
     return drawToTarget(grid);
   }
   grid.pushSource(sv.add(svf).setDirs([sdr]));
-  console.log('r curve');
+  // console.log('r curve');
   return drawToTarget(grid);
 };
 
@@ -282,7 +295,7 @@ const chooseSimplestPath = (sv: Vector, ev: Vector, pathMargin: number): [Dir[],
   for (let svDir of svDirsIn) {
     for (let evDir of evDirsIn) {
       if (svDir.abs().eq(evDir.mirror().abs()) && vr.absSize() > pathMargin) {
-        console.log('r chosen!', svDir, evDir);
+        // console.log('r chosen!', svDir, evDir);
         return [[svDir], [evDir]];
       }
     }
@@ -291,7 +304,7 @@ const chooseSimplestPath = (sv: Vector, ev: Vector, pathMargin: number): [Dir[],
   for (let svDir of svDirsIn) {
     for (let evDir of evDirsIn) {
       if (svDir.eq(evDir)) {
-        console.log('z chosen!', svDir, evDir);
+        // console.log('z chosen!', svDir, evDir);
         return [[svDir], [evDir]];
       }
     }
@@ -301,8 +314,8 @@ const chooseSimplestPath = (sv: Vector, ev: Vector, pathMargin: number): [Dir[],
 };
 
 class SmartGrid {
-  private sources: VectorArr = new VectorArr();
-  private targets: VectorArr = new VectorArr();
+  sources: VectorArr = new VectorArr();
+  targets: VectorArr = new VectorArr();
 
   // targetDir: Dir;
 
@@ -331,7 +344,7 @@ class SmartGrid {
     return v;
   };
 
-  getPoints = () => [...this.sources.toList(), ...this.targets.rev().toList()];
+  getPoints = () => [...this.sources.toList(), ...this.targets.rev().toList()] as const;
 }
 
 export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[], pathMargin) => {
@@ -374,7 +387,14 @@ export const points2Vector = (
   return new Vector(x1, y1, sd);
 };
 
+export const pointsToLines = (points) => {
+  const p1 = points.splice(0, 1)[0];
+  const first = `M ${p1[0]} ${p1[1]}`;
+  return points.reduce((ac, cr) => ac + ` L ${cr[0]} ${cr[1]} `, first);
+};
+
 if (require.main === module) {
+  console.log(pick(new Dir(10, 0).rotate(180), ['x', 'y']));
   // console.log(new Dir(1, -1).toDegree());
 
   // testPoints2Vector();
@@ -391,8 +411,14 @@ if (require.main === module) {
     testZ();
   };
   // test();
+  let arr = [
+    [169, 50],
+    [169, 120],
+    [270.1830003261566, 120],
+  ];
+  console.log(pointsToLines(arr));
 
-  console.log(points2Vector(1000, 1000, 'top', []));
+  // console.log(points2Vector(1000, 1000, 'top', []));
 
   // console.log(dir2Deg(new Dir(1, 0)));
   // console.log(console.log(new Dir(100, 200)));

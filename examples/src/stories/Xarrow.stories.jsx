@@ -81,7 +81,7 @@ const DraggableBox = ({ box, forceRerender, style = {} }) => {
   );
 };
 
-const DraggableTemplate = ({ box1: box1Style, box2: box2Style, ...xarrowProps }) => {
+const CustomSimpleTemplate = ({ box1: box1Style, box2: box2Style, ...xarrowProps }) => {
   const [, setRender] = useState({});
   const forceRerender = () => setRender({});
   const box = { id: 'box1', x: 20, y: 20 };
@@ -95,13 +95,13 @@ const DraggableTemplate = ({ box1: box1Style, box2: box2Style, ...xarrowProps })
   );
 };
 
-export const CustomSimple = (ar) => <DraggableTemplate {...ar} />;
+export const CustomSimple = (ar) => <CustomSimpleTemplate {...ar} />;
 
 CustomSimple.args = {
   box1: { height: 150, width: 60 },
   box2: { height: 90, width: 80 },
   startAnchor: 'right',
-  endAnchor: 'top',
+  endAnchor: 'auto',
   label: null,
   color: 'CornflowerBlue',
   lineColor: null,
@@ -110,17 +110,17 @@ CustomSimple.args = {
   strokeWidth: 4,
   showHead: true,
   headSize: 6,
-  showTail: false,
+  showTail: true,
   tailSize: 6,
   path: 'smooth',
   curveness: 0.8,
   gridBreak: 0.5,
   dashness: false,
-  headShape: 'arrow1',
+  headShape: 'arrow2',
   tailShape: 'arrow1',
   animateDrawing: false,
   showXarrow: true,
-  _debug: true,
+  _debug: false,
   _extendSVGcanvas: 1000,
 };
 

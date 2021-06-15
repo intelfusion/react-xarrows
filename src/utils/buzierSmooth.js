@@ -73,12 +73,6 @@ const svgPath = (points, command) => {
 
 export const smoothBezierPoints = (points) => svgPath(points, bezierCommand);
 
-export const pointsToLines = (points) => {
-  const p1 = points.splice(0, 1)[0];
-  const first = `M ${p1[0]} ${p1[1]}`;
-  return points.reduce((ac, cr) => ac + ` L ${cr[0]} ${cr[1]} `, first);
-};
-
 class Point {
   constructor(x, y) {
     this.x = x;

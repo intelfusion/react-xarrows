@@ -9,7 +9,7 @@ export const tFacingDir = ['auto', 'inwards', 'outwards', 'left', 'right', 'up',
 
 //default arrows svgs
 export const arrowShapes = {
-  arrow1: { svgElem: 'path', svgProps: { d: `M 0 0 L 1 0.5 L 0 1 L 0.25 0.5 z` }, offsetForward: 0.25 },
+  arrow1: { svgElem: 'path', svgProps: { d: `M 0 0 L 1 0.5 L 0 1 L 0.25 0.5 z` }, offsetForward: 0.75 },
   heart: {
     svgElem: 'path',
     svgProps: {
@@ -27,17 +27,17 @@ export const arrowShapes = {
     },
     offsetForward: 0,
   },
-  // todo: add support for automatic svg adjustments with getBBbox()
-  // arrow2: {
-  //   svgElem: 'path',
-  //   svgProps: {
-  //     //// handle automatic resize of the svg
-  //     // d: `M 0.5 1 l -0.171749 -0.16666 0.3333 -0.3333 -0.3333 -0.3333 0.171749 -0.16666 0.494916 0.5 z`,
-  //     // d: `M 0 1 l -0.171749 -0.16666 0.3333 -0.3333 -0.3333 -0.3333 0.171749 -0.16666 0.494916 0.5 z`,
-  //     d: `M 0 24 l -4.122     -4      8      -8      -8      -8       4.122    -4 11.878 12 z`,
-  //   },
-  //   // offsetForward: -0.65,
-  // },
+  test: { svgElem: 'path', svgProps: { d: `M 1 1 L 3 2 L 1 3 L 1.5 2 z` }, offsetForward: 1 },
+  arrow2: {
+    svgElem: 'path',
+    svgProps: {
+      //// handle automatic resize of the svg
+      // d: `M 0.5 1 l -0.171749 -0.16666 0.3333 -0.3333 -0.3333 -0.3333 0.171749 -0.16666 0.494916 0.5 z`,
+      // d: `M 0 1 l -0.171749 -0.16666 0.3333 -0.3333 -0.3333 -0.3333 0.171749 -0.16666 0.494916 0.5 z`,
+      d: `M 0 24 l -4.122     -4      8      -8      -8      -8       4.122    -4 11.878 12 z`,
+    },
+    offsetForward: 0.4,
+  },
   // todo: add more default shapes
 } as const;
 
