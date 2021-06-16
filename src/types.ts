@@ -105,6 +105,7 @@ export type labelsType = {
   start?: labelType;
   middle?: labelType;
   end?: labelType;
+  [key: string]: labelType;
 };
 export type labelType = JSX.Element | string;
 

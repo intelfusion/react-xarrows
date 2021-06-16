@@ -12,6 +12,7 @@ import {
   _prevPosType,
   arrowShapes,
   labelsType,
+  labelType,
   svgCustomEdgeType,
   svgEdgeShapeType,
   tAnchorEdge,
@@ -134,6 +135,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     labelStartPos: { x: 0, y: 0 },
     labelMiddlePos: { x: 0, y: 0 },
     labelEndPos: { x: 0, y: 0 },
+    labelsPos: [] as { pos: { x: number; y: number }; label: labelType }[],
   });
 
   // // debug
@@ -195,16 +197,27 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     }
   }
 
-  let extraLabels = [];
-  let labelStart = null,
-    labelMiddle = null,
-    labelEnd = null;
+  let labels: labelsType = {};
+  // let labelStart = null,
+  //   labelMiddle = null,
+  //   labelEnd = null;
+  // let labelD = {
+  //   start: labelStart,
+  //   middle: labelMiddle,
+  //   labelEnd: labelEnd,
+  // };
   if (label) {
-    if (typeof label === 'string' || 'type' in label) labelMiddle = label;
-    else if (['start', 'middle', 'end'].some((key) => key in (label as labelsType))) {
-      label = label as labelsType;
-      ({ start: labelStart, middle: labelMiddle, end: labelEnd } = label);
+    // if its a string, or if it's a jsx element
+    // if (typeof label === 'string' || 'type' in label) labelMiddle = label;
+    if (typeof label === 'string' || React.isValidElement(label)) labels = { middle: label };
+    else {
+      labels = { ...(label as labelsType) };
     }
+    // if (typeof label === 'string' || 'type' in label) labelMiddle = label;
+    // else if (['start', 'middle', 'end'].some((key) => key in (label as labelsType))) {
+    //   label = label as labelsType;
+    //   ({ start: labelStart, middle: labelMiddle, end: labelEnd } = label);
+    // }
   }
 
   const defaultEdge = (svgEdge): svgCustomEdgeType => {
@@ -405,9 +418,36 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
     let lineLength = smartGrid.getLength();
 
-    const labelStartPos = labelStart ? pick(smartGrid.getPointOnGrid(lineLength * 0.05), ['x', 'y']) : null;
-    const labelMiddlePos = labelMiddle ? pick(smartGrid.getPointOnGrid(lineLength * 0.5), ['x', 'y']) : null;
-    const labelEndPos = labelEnd ? pick(smartGrid.getPointOnGrid(lineLength * 0.95), ['x', 'y']) : null;
+    const labelStartPos = labels.start ? pick(smartGrid.getPointOnGrid(lineLength * 0.03), ['x', 'y']) : null;
+    const labelMiddlePos = labels.middle ? pick(smartGrid.getPointOnGrid(lineLength * 0.5), ['x', 'y']) : null;
+    const labelEndPos = labels.end ? pick(smartGrid.getPointOnGrid(lineLength * 0.97), ['x', 'y']) : null;
+
+    // handle custom labels
+    const labelsPos: { pos: { x: number; y: number }; label: labelType }[] = [];
+    for (let key in labels) {
+      let sp = key.split('%');
+      let absLen = 0,
+        percentLen = 0;
+      let found = false;
+      if (sp.length == 1) {
+        let p = parseFloat(sp[0]);
+        if (!isNaN(p)) {
+          absLen = p;
+          found = true;
+        }
+      } else if (sp.length == 2) {
+        let [p1, p2] = [parseFloat(sp[0]), parseFloat(sp[1])];
+        console.log(p1);
+        if (!isNaN(p1)) percentLen = lineLength * (p1 / 100);
+        if (!isNaN(p2)) absLen = p2;
+        if (!isNaN(p1) || !isNaN(p2)) found = true;
+      }
+      if (found)
+        labelsPos.push({
+          pos: pick(smartGrid.getPointOnGrid(percentLen + absLen), ['x', 'y']),
+          label: labels[key],
+        });
+    }
 
     // //labels
     // const bzx = bzFunction(x1, cpx1, cpx2, x2);
@@ -450,6 +490,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       labelStartPos,
       labelMiddlePos,
       labelEndPos,
+      labelsPos,
     });
   };
 
@@ -560,6 +601,9 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   // tailShape.elem:K force the type for passProps,arrowHeadProps,arrowTailProps property. for now `as any` is used to
   // avoid typescript conflicts
   // so todo- fix all the `passProps as any` assertions
+
+  // console.log(st.labelsPos);
+  // console.log(st.labelEndPos);
 
   return (
     <div {...divContainerProps} style={{ position: 'absolute', ...divContainerStyle }} {...extraProps}>
@@ -684,7 +728,9 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
             ) : null}
           </svg>
 
-          {labelStart ? (
+          {/*from here labels and debug elements*/}
+          {/*************************************/}
+          {labels.start ? (
             <div
               style={{
                 transform: st.dx < 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
@@ -693,10 +739,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
                 left: st.cx0 + st.labelStartPos.x,
                 top: st.cy0 + st.labelStartPos.y - strokeWidth - 5,
               }}>
-              {labelStart}
+              {labels.start}
             </div>
           ) : null}
-          {labelMiddle ? (
+          {labels.middle ? (
             <div
               style={{
                 display: 'table',
@@ -706,10 +752,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
                 left: st.cx0 + st.labelMiddlePos.x,
                 top: st.cy0 + st.labelMiddlePos.y,
               }}>
-              {labelMiddle}
+              {labels.middle}
             </div>
           ) : null}
-          {labelEnd ? (
+          {labels.end ? (
             <div
               style={{
                 transform: st.dx > 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
@@ -718,9 +764,23 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
                 left: st.cx0 + st.labelEndPos.x,
                 top: st.cy0 + st.labelEndPos.y + strokeWidth + 5,
               }}>
-              {labelEnd}
+              {labels.end}
             </div>
           ) : null}
+          {/* custom labels (like {30%50:"some label"})*/}
+          {st.labelsPos.map((l, i) => (
+            <div
+              key={i}
+              style={{
+                width: 'max-content',
+                transform: 'translate(-50% , -50%)',
+                position: 'absolute',
+                left: st.cx0 + l.pos.x,
+                top: st.cy0 + l.pos.y,
+              }}>
+              {l.label}
+            </div>
+          ))}
           {_debug ? (
             <>
               {/* possible anchor connections */}
@@ -772,7 +832,7 @@ const pRefType = PT.oneOfType([PT.string, PT.exact({ current: PT.instanceOf(Elem
 
 const _pLabelType = PT.oneOfType([PT.element, PT.string]);
 
-const pLabelsType = PT.exact({
+const pLabelsType = PT.shape({
   start: _pLabelType,
   middle: _pLabelType,
   end: _pLabelType,

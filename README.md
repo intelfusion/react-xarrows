@@ -257,6 +257,14 @@ you can place up to 3 labels. see examples
   custom middle label
 - ```label={{ start:"I'm start label",middle: "middleLabel",end:<div style={{ fontSize: "1.3em", fontFamily: "fantasy", fontStyle: "italic" }}>big end label</div> }}```
   start and middle label and custom end label
+- ```label={{ 30: "label" }}``` - label 30 pixels relative to the start of the line
+- ```label={{ 30%: "label" }}``` - label on the 30% of the total length from the start of the line
+- ```label={{ 30%50: "label" }}``` - 30% of the total length, and 50 more pixels over the line
+
+'start','middle',and 'end' labels have some predefined styles. custom labels (like `30%50: "label"`) will have the same
+style as middle label. make sure to stick between 0-100% in custom labels
+
+you can combine all the different possible labels and can place as many as you want.
 
 </details>
 
