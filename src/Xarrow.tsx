@@ -86,18 +86,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   const prevPosState = useRef<_prevPosType>(null);
   const prevProps = useRef<xarrowPropsType>(null);
 
-  // const [headBox, setHeadBox] = useState({ x: 0, y: 0, width: 1, height: 1 });
-  // const [tailBox, setTailBox] = useState({ x: 0, y: 0, width: 1, height: 1 });
   const headBox = useRef({ x: 0, y: 0, width: 1, height: 1 });
   const tailBox = useRef({ x: 0, y: 0, width: 1, height: 1 });
 
-  // const headBox = useRef({ x: 0, y: 0, width: 1, height: 1 });
-  // const tailBox = useRef({ x: 0, y: 0, width: 1, height: 1 });
-
   const [drawAnimEnded, setDrawAnimEnded] = useState(!animateDrawing);
-
-  const [_, setRerender] = useState({});
-  const dumyRenderer = () => setRerender({});
 
   const [st, setSt] = useState({
     //initial state
@@ -174,8 +166,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     }
   };
 
-  // const headBox = headRef.current?.getBBox({ stroke: true }) ?? { x: 0, y: 0, width: 1, height: 1 };
-
   headSize = Number(headSize);
   strokeWidth = Number(strokeWidth);
   headColor = headColor ? headColor : color;
@@ -198,26 +188,9 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   }
 
   let labels: labelsType = {};
-  // let labelStart = null,
-  //   labelMiddle = null,
-  //   labelEnd = null;
-  // let labelD = {
-  //   start: labelStart,
-  //   middle: labelMiddle,
-  //   labelEnd: labelEnd,
-  // };
   if (label) {
-    // if its a string, or if it's a jsx element
-    // if (typeof label === 'string' || 'type' in label) labelMiddle = label;
     if (typeof label === 'string' || React.isValidElement(label)) labels = { middle: label };
-    else {
-      labels = { ...(label as labelsType) };
-    }
-    // if (typeof label === 'string' || 'type' in label) labelMiddle = label;
-    // else if (['start', 'middle', 'end'].some((key) => key in (label as labelsType))) {
-    //   label = label as labelsType;
-    //   ({ start: labelStart, middle: labelMiddle, end: labelEnd } = label);
-    // }
+    else labels = { ...(label as labelsType) };
   }
 
   const defaultEdge = (svgEdge): svgCustomEdgeType => {
@@ -274,15 +247,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     return { start, end };
   };
 
-  // const xOffsetHead = st.x2 - st.arrowHeadOffset.x;
-  // const yOffsetHead = st.y2 - st.arrowHeadOffset.y;
-  // const xOffsetTail = st.x1 - st.arrowTailOffset.x;
-  // const yOffsetTail = st.y1 - st.arrowTailOffset.y;
-  // const xOffsetHead = st.x2 - 10;
-  // const yOffsetHead = st.y2 - 0;
-  // const xOffsetTail = st.x1 - 0;
-  // const yOffsetTail = st.y1 - 0;
-
   /**
    * The Main logic of path calculation for the arrow.
    * calculate new path, adjusting canvas, and set state based on given properties.
@@ -322,7 +286,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let ySign = dy > 0 ? 1 : -1;
     let xRev = dx < 0 ? 1 : 0;
     let yRev = dy < 0 ? 1 : 0;
-    // let [headOffset, tailOffset] = [headShape.offsetForward, tailShape.offsetForward];
     let fHeadSize = headSize * strokeWidth; //factored head size
     let fTailSize = tailSize * strokeWidth; //factored head size
 
@@ -448,14 +411,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
           label: labels[key],
         });
     }
-
-    // //labels
-    // const bzx = bzFunction(x1, cpx1, cpx2, x2);
-    // const bzy = bzFunction(y1, cpy1, cpy2, y2);
-    // const labelStartPos = { x: bzx(0.01), y: bzy(0.01) };
-    // const labelMiddlePos = { x: bzx(0.5), y: bzy(0.5) };
-    // const labelEndPos = { x: bzx(0.99), y: bzy(0.99) };
-    // const arrowEnd = { x: bzx(1), y: bzy(1) };
 
     setSt({
       cx0,
@@ -601,9 +556,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   // tailShape.elem:K force the type for passProps,arrowHeadProps,arrowTailProps property. for now `as any` is used to
   // avoid typescript conflicts
   // so todo- fix all the `passProps as any` assertions
-
-  // console.log(st.labelsPos);
-  // console.log(st.labelEndPos);
 
   return (
     <div {...divContainerProps} style={{ position: 'absolute', ...divContainerStyle }} {...extraProps}>

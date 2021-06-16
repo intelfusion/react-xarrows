@@ -2,7 +2,6 @@ import { number } from 'prop-types';
 import { _faceDirType, anchorNamedType } from '../types';
 import pick from 'lodash.pick';
 
-// type VectType = Vector|DVector
 const operatorFunc = (p: Vector, p2: Vector | number, operator) => {
   let _p2;
   if (typeof p2 === 'number') _p2 = { x: p2, y: p2 };

@@ -262,7 +262,8 @@ you can place up to 3 labels. see examples
 - ```label={{ 30%50: "label" }}``` - 30% of the total length, and 50 more pixels over the line
 
 'start','middle',and 'end' labels have some predefined styles. custom labels (like `30%50: "label"`) will have the same
-style as middle label. make sure to stick between 0-100% in custom labels
+style as middle label. if you dont like the style of 'start' and 'end' use 2% for start and 98% for end. make sure to
+stick between 0-100% in custom labels
 
 you can combine all the different possible labels and can place as many as you want.
 
