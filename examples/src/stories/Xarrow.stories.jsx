@@ -120,24 +120,34 @@ CustomSimple.args = {
   tailShape: 'arrow1',
   animateDrawing: false,
   showXarrow: true,
-  _debug: false,
+  _debug: true,
   _extendSVGcanvas: 1000,
 };
 
 export const CustomAdvanced = CustomSimple.bind({});
 CustomAdvanced.args = {
-  startAnchor: { position: 'right', offset: { rightness: 0, bottomness: 7 } },
-  endAnchor: { position: 'left', offset: { rightness: 0, bottomness: -7 } },
+  startAnchor: {
+    position: 'right',
+    offset: { rightness: 0, bottomness: 0 },
+    facingDir: ['auto', 'inwards'],
+  },
+  endAnchor: {
+    position: 'left',
+    offset: { rightness: 0, bottomness: 0 },
+    // facingDir: ['outwards', 'inwards'],
+  },
   label: { start: '', middle: '', center: '' },
   path: 'smooth',
-  dashness: { strokeLen: 10, nonStrokeLen: 15, animation: -2 },
+  // dashness: { strokeLen: 10, nonStrokeLen: 15, animation: -2 },
+  dashness: false,
   headSize: 6,
   tailSize: 6,
   headShape: 'arrow1',
   tailShape: 'arrow1',
   showXarrow: true,
-  animateDrawing: 1,
-  _extendSVGcanvas: 0,
+  animateDrawing: 0,
+  _debug: true,
+  _extendSVGcanvas: 300,
 };
 
 export const CustomSvgHead = CustomSimple.bind({});

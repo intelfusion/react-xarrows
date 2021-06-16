@@ -369,6 +369,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       sv = sv.add(sdd.mul(perTailOffset * tailShape.offsetForward));
     }
 
+    // console.log(sv, ev, [], pathMargin);
     let smartGrid = calcSmartPath(sv, ev, [], pathMargin);
     let headVector = ev;
     let tailVector = sv;
@@ -379,6 +380,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
     let points = smartGrid.getPoints();
     let arrowPath = pointsToLines(points);
+    // if (sd.length > 1) {
+    //   console.log(sv, ev, sd);
+    //   console.log(points);
+    // }
 
     const cw = absDx + excLeft + excRight,
       ch = absDy + excUp + excDown;

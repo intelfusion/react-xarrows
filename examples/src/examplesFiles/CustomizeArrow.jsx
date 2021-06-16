@@ -273,10 +273,6 @@ const CustomizeArrow = () => {
   const [endLabel, setEndLabel] = useState('');
   const [_extendSVGcanvas, setExtendSVGcanvas] = useState(0);
   const [_debug, set_Debug] = useState(true);
-  const [_cpx1Offset, set_Cpx1] = useState(0);
-  const [_cpy1Offset, set_Cpy1] = useState(0);
-  const [_cpx2Offset, set_Cpx2] = useState(0);
-  const [_cpy2Offset, set_Cpy2] = useState(0);
   const [animateDrawing, setAnimateDrawing] = useState(1);
   const [enableAnimateDrawing, setEnableAnimateDrawing] = useState(false);
   const _animateDrawing = enableAnimateDrawing ? animateDrawing : false;
@@ -328,10 +324,6 @@ const CustomizeArrow = () => {
     },
     _extendSVGcanvas,
     _debug,
-    _cpx1Offset: _cpx1Offset,
-    _cpy1Offset: _cpy1Offset,
-    _cpx2Offset: _cpx2Offset,
-    _cpy2Offset: _cpy2Offset,
     animateDrawing: _animateDrawing,
   };
   /////////////////////////////////////////////////
@@ -492,36 +484,6 @@ const CustomizeArrow = () => {
                 onChange={(e) => {
                   set_Debug(e.target.checked);
                 }}
-              />
-            </Div>
-            <Div>
-              <p>_cpx1Offset: </p>
-              <NumericInput
-                value={_cpx1Offset}
-                onChange={(val) => set_Cpx1(val)}
-                style={{ input: { width: 70 } }}
-                step={2}
-              />
-              <p>_cpy1Offset: </p>
-              <NumericInput
-                value={_cpy1Offset}
-                onChange={(val) => set_Cpy1(val)}
-                style={{ input: { width: 70 } }}
-                step={2}
-              />
-              <p>_cpx2Offset: </p>
-              <NumericInput
-                value={_cpx2Offset}
-                onChange={(val) => set_Cpx2(val)}
-                style={{ input: { width: 70 } }}
-                step={2}
-              />
-              <p>_cpy2Offset: </p>
-              <NumericInput
-                value={_cpy2Offset}
-                onChange={(val) => set_Cpy2(val)}
-                style={{ input: { width: 70 } }}
-                step={2}
               />
             </Div>
           </MyCollapsible>

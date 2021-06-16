@@ -212,11 +212,15 @@ const drawToTarget = (grid: SmartGrid): void => {
   let [sv, ev] = grid.getEdges();
   if (sv.eq(ev)) return;
   let vse = ev.sub(sv);
-  let xd = new Dir(new Vector(vse.x, 0));
-  let yd = new Dir(new Vector(0, vse.y));
 
-  if (xd.absSize() === 0) xd = yd.mirror();
-  if (yd.absSize() === 0) yd = xd.mirror();
+  // let xd = new Dir(new Vector(vse.x, 0));
+  // let yd = new Dir(new Vector(0, vse.y));
+
+  // if (xd.absSize() === 0) {
+  //   xd = yd.mirror();
+  //   console.log('coshilrabak');
+  // }
+  // if (yd.absSize() === 0) yd = xd.mirror();
 
   // chose(arbitrary) the first allowed dir
   let svDir = sv.faceDirs[0];
@@ -224,7 +228,8 @@ const drawToTarget = (grid: SmartGrid): void => {
 
   //direction and vectors of rectangle
   let svf = svDir.mul(vse.abs());
-  let svr = vse.sub(svf);
+  // let svr = vse.sub(svf);
+  let svr = svDir.rotate(90).abs().mul(vse);
   let sdf = new Dir(svf);
   let sdr = new Dir(svr);
 
@@ -242,7 +247,7 @@ const drawToTarget = (grid: SmartGrid): void => {
     return drawToTarget(grid);
   }
   grid.pushSource(sv.add(svf).setDirs([sdr]));
-  // console.log('r curve');
+  // console.log('r curve', svDir, evDir);
   return drawToTarget(grid);
 };
 
@@ -269,6 +274,8 @@ export const EAD = {
 } as const;
 
 export const chooseSimplestPath = (sv: Vector, ev: Vector, pathMargin: number): [Dir[], Dir[]] => {
+  if (ev.faceDirs.length === 1 && sv.faceDirs.length === 1) return [sv.faceDirs, ev.faceDirs];
+
   let vse = ev.sub(sv);
 
   // the rectangle vectors and dirs
@@ -278,8 +285,8 @@ export const chooseSimplestPath = (sv: Vector, ev: Vector, pathMargin: number): 
   let dr = new Dir(vr);
 
   // the dirs inwards the rectangle that connects the 2 points
-  let [svDirsIn, svDirsOut] = filterDirs(sv.faceDirs, [df, dr]);
   let [evDirsIn, evDirsOut] = filterDirs(ev.faceDirs, [df, dr]);
+  let [svDirsIn, svDirsOut] = filterDirs(sv.faceDirs, [df, dr]);
 
   if (svDirsIn.length === 1 && evDirsIn.length === 1) return [svDirsIn, evDirsIn];
 
@@ -395,29 +402,33 @@ export const pointsToLines = (points) => {
 };
 
 if (require.main === module) {
-  console.log(pick(new Dir(10, 0).rotate(180), ['x', 'y']));
+  // console.log(pick(new Dir(10, 0).rotate(180), ['x', 'y']));
   // console.log(new Dir(1, -1).toDegree());
 
   // testPoints2Vector();
   const test = () => {
     const testZ = () => {
-      let sp = new Vector(1100, 1000),
-        ep = new Vector(1000, 1100);
-      let sd = [dirs['right']],
+      let sv = new Vector(50, 50),
+        ev = new Vector(32, 147);
+      let sd = [dirs['right'], dirs['left']],
         ed = [dirs['right']];
       // let points = calcSmartPath(sp, 'right', ep, 'top');
-      const smartGrid = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15);
+      let [sdd, edd] = chooseSimplestPath(sv.setDirs(sd), ev.setDirs(ed), 30);
+      // const smartGrid = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15);
+      const smartGrid = calcSmartPath(sv.setDirs(sd), ev.setDirs(ed), [], 30);
       const points = smartGrid.getPoints();
+      console.log(points);
     };
     testZ();
   };
-  // test();
+  test();
+
   let arr = [
     [169, 50],
     [169, 120],
     [270.1830003261566, 120],
   ];
-  console.log(pointsToLines(arr));
+  // console.log(pointsToLines(arr));
 
   // console.log(points2Vector(1000, 1000, 'top', []));
 
