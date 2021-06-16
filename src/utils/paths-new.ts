@@ -434,7 +434,7 @@ if (require.main === module) {
   const test = () => {
     const testZ = () => {
       let sv = new Vector(1000, 1000),
-        ev = new Vector(1100, 1100);
+        ev = new Vector(1000, 1100);
       let sd = [dirs['right'], dirs['left']],
         ed = [dirs['right']];
       // let points = calcSmartPath(sp, 'right', ep, 'top');
@@ -442,7 +442,7 @@ if (require.main === module) {
       // const smartGrid = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15);
       const smartGrid = calcSmartPath(sv.setDirs(sd), ev.setDirs(ed), [], 30);
       const points = smartGrid.getPoints();
-      console.log(pick(smartGrid.getPointOnGrid(120), ['x', 'y']));
+      console.log(points);
     };
     testZ();
   };

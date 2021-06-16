@@ -271,9 +271,10 @@ const CustomizeArrow = () => {
   const [startLabel, setStartLabel] = useState('');
   const [middleLabel, setMiddleLabel] = useState('');
   const [endLabel, setEndLabel] = useState('');
-  const [_extendSVGcanvas, setExtendSVGcanvas] = useState(0);
+  const [_extendSVGcanvas, setExtendSVGcanvas] = useState(200);
   const [_debug, set_Debug] = useState(true);
   const [animateDrawing, setAnimateDrawing] = useState(1);
+  const [_pathMargin, set_pathMargin] = useState(20);
   const [enableAnimateDrawing, setEnableAnimateDrawing] = useState(false);
   const _animateDrawing = enableAnimateDrawing ? animateDrawing : false;
   const [headShape, setHeadShape] = useState(Object.keys(arrowShapes)[0]);
@@ -324,6 +325,7 @@ const CustomizeArrow = () => {
     },
     _extendSVGcanvas,
     _debug,
+    _pathMargin,
     animateDrawing: _animateDrawing,
   };
   /////////////////////////////////////////////////
@@ -351,20 +353,32 @@ const CustomizeArrow = () => {
               titlesList={tAnchorEdge}
             />
             <TitledCheckList title={'endAnchor'} values={endAnchor} setValues={setEndAnchor} titlesList={tAnchorEdge} />
-            <TitledCheckList
-              title={'startFaceDirs'}
-              values={startFacingDir}
-              setValues={setStartFacingDir}
-              titlesList={tFacingDir}
-            />
-            <TitledCheckList
-              title={'endFaceDirs'}
-              values={endFacingDir}
-              setValues={setEndFacingDir}
-              titlesList={tFacingDir}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ display: 'flex' }}>
+                <TitledCheckList
+                  title={'startFaceDirs'}
+                  values={startFacingDir}
+                  setValues={setStartFacingDir}
+                  titlesList={tFacingDir}
+                />
+                <TitledCheckList
+                  title={'endFaceDirs'}
+                  values={endFacingDir}
+                  setValues={setEndFacingDir}
+                  titlesList={tFacingDir}
+                />
+              </div>
+              <div>
+                <p>_pathMargin: </p>
+                <NumericInput
+                  value={_pathMargin}
+                  onChange={(val) => set_pathMargin(val)}
+                  style={{ input: { width: 60 } }}
+                />
+              </div>
+            </div>
           </CollapsibleDiv>
-          <MyCollapsible title={'arrow apearance'} open={true}>
+          <MyCollapsible title={'arrow appearance'} open={true}>
             <Div>
               <p>arrow color(all): </p>
               <select style={{ height: '20px', marginRight: 10 }} onChange={(e) => setColor(e.target.value)}>

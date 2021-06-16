@@ -33,7 +33,7 @@ import {
   Vector,
 } from './utils/paths-new';
 
-const pathMargin = 30;
+// const pathMargin = 30;
 
 const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   let {
@@ -68,6 +68,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     SVGcanvasStyle = {},
     _extendSVGcanvas = 0,
     _debug = false,
+    _pathMargin = 20,
     ...extraProps
   } = props;
   const varProps = omit(props, ['start', 'end']);
@@ -326,7 +327,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     sv = points2Vector(x1, y1, chosenStart.anchor.position, sSides as Exclude<_faceDirType, 'auto'>[]);
     ev = points2Vector(x2, y2, chosenEnd.anchor.position, eSides as Exclude<_faceDirType, 'auto'>[]);
     // choose the simplest one
-    let [sd, ed] = chooseSimplestPath(sv, ev, pathMargin);
+    let [sd, ed] = chooseSimplestPath(sv, ev, _pathMargin);
     sv = sv.setDirs(sd);
     ev = ev.setDirs(ed);
     let sdd = sd[0];
@@ -359,7 +360,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     }
 
     // console.log(sv, ev, [], pathMargin);
-    let smartGrid = new SmartGrid(sv, ev, [], pathMargin);
+    let smartGrid = new SmartGrid(sv, ev, [], _pathMargin);
     let headVector = ev;
     let tailVector = sv;
     let headDir = headVector.faceDirs[0];
@@ -369,6 +370,19 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
     let points = smartGrid.getPoints();
     let arrowPath = pointsToLines(points);
+
+    // let maxX = Math.max(...points.map((p) => p[0]));
+    // let maxY = Math.max(...points.map((p) => p[1]));
+    // let minX = Math.min(...points.map((p) => p[0]));
+    // let minY = Math.min(...points.map((p) => p[1]));
+    // console.log(maxX, maxY, minX, minY);
+    // console.log(absDx + excLeft);
+    // let f = strokeWidth;
+    // if (maxX + f > absDx + excLeft + excRight) excRight = maxX - (absDx + excLeft) + f;
+    // if (maxY + f > absDy + excUp + excDown) excDown = maxY - (absDy + excUp) + f;
+    // if (minX < 0) excLeft -= minX;
+    // if (minY < absDy - (excUp + excDown)) excDown = minY - (absDy + excUp) + f;
+
     // if (sd.length > 1) {
     //   console.log(sv, ev, sd);
     //   console.log(points);
@@ -380,7 +394,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     cy0 -= excUp;
 
     let lineLength = smartGrid.getLength();
-
     const labelStartPos = labels.start ? pick(smartGrid.getPointOnGrid(lineLength * 0.03), ['x', 'y']) : null;
     const labelMiddlePos = labels.middle ? pick(smartGrid.getPointOnGrid(lineLength * 0.5), ['x', 'y']) : null;
     const labelEndPos = labels.end ? pick(smartGrid.getPointOnGrid(lineLength * 0.97), ['x', 'y']) : null;
@@ -832,10 +845,6 @@ Xarrow.propTypes = {
   divContainerProps: PT.object,
   _extendSVGcanvas: PT.number,
   _debug: PT.bool,
-  _cpx1Offset: PT.number,
-  _cpy1Offset: PT.number,
-  _cpx2Offset: PT.number,
-  _cpy2Offset: PT.number,
 };
 
 export default Xarrow;

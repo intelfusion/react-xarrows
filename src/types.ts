@@ -83,10 +83,7 @@ export type xarrowPropsType = {
   divContainerStyle?: React.CSSProperties;
   _extendSVGcanvas?: number;
   _debug?: boolean;
-  _cpx1Offset?: number;
-  _cpy1Offset?: number;
-  _cpx2Offset?: number;
-  _cpy2Offset?: number;
+  _pathMargin?: number;
 };
 
 export type pathType = typeof tPaths[number];
