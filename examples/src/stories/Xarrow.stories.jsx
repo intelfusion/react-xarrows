@@ -102,7 +102,7 @@ CustomSimple.args = {
   box2: { height: 90, width: 80 },
   startAnchor: 'right',
   endAnchor: 'left',
-  label: { start: 'hey!' },
+  label: { start: 'start', middle: 'middle', end: 'end' },
   color: 'CornflowerBlue',
   lineColor: null,
   headColor: null,

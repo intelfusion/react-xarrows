@@ -132,6 +132,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     fTailSize: 1,
     arrowPath: ``,
     labelStartPos: { x: 0, y: 0 },
+    labelMiddlePos: { x: 0, y: 0 },
+    labelEndPos: { x: 0, y: 0 },
   });
 
   // // debug
@@ -193,6 +195,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     }
   }
 
+  let extraLabels = [];
   let labelStart = null,
     labelMiddle = null,
     labelEnd = null;
@@ -400,10 +403,11 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     cx0 -= excLeft;
     cy0 -= excUp;
 
-    let lineLength = lineRef.current.getTotalLength();
+    let lineLength = smartGrid.getLength();
 
-    const labelStartPos = pick(smartGrid.getPointOnGrid(lineLength * 0.01), ['x', 'y']);
-    console.log(points, lineLength, labelStartPos);
+    const labelStartPos = labelStart ? pick(smartGrid.getPointOnGrid(lineLength * 0.05), ['x', 'y']) : null;
+    const labelMiddlePos = labelMiddle ? pick(smartGrid.getPointOnGrid(lineLength * 0.5), ['x', 'y']) : null;
+    const labelEndPos = labelEnd ? pick(smartGrid.getPointOnGrid(lineLength * 0.95), ['x', 'y']) : null;
 
     // //labels
     // const bzx = bzFunction(x1, cpx1, cpx2, x2);
@@ -444,6 +448,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       fTailSize,
       arrowPath,
       labelStartPos,
+      labelMiddlePos,
+      labelEndPos,
     });
   };
 
@@ -490,6 +496,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   // handle draw animation
   useLayoutEffect(() => {
     if (lineRef.current) setSt((prevSt) => ({ ...prevSt, lineLength: lineRef.current.getTotalLength() }));
+    // if (lineRef.current) setSt((prevSt) => ({ ...prevSt, lineLength: st.lineLength }));
   }, [lineRef.current]);
 
   // for adjustments of custom svg shapes
@@ -689,31 +696,31 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
               {labelStart}
             </div>
           ) : null}
-          {/*{labelMiddle ? (*/}
-          {/*  <div*/}
-          {/*    style={{*/}
-          {/*      display: 'table',*/}
-          {/*      width: 'max-content',*/}
-          {/*      transform: 'translate(-50% , -50%)',*/}
-          {/*      position: 'absolute',*/}
-          {/*      left: st.cx0 + st.labelMiddlePos.x,*/}
-          {/*      top: st.cy0 + st.labelMiddlePos.y,*/}
-          {/*    }}>*/}
-          {/*    {labelMiddle}*/}
-          {/*  </div>*/}
-          {/*) : null}*/}
-          {/*{labelEnd ? (*/}
-          {/*  <div*/}
-          {/*    style={{*/}
-          {/*      transform: st.dx > 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',*/}
-          {/*      width: 'max-content',*/}
-          {/*      position: 'absolute',*/}
-          {/*      left: st.cx0 + st.labelEndPos.x,*/}
-          {/*      top: st.cy0 + st.labelEndPos.y + strokeWidth + 5,*/}
-          {/*    }}>*/}
-          {/*    {labelEnd}*/}
-          {/*  </div>*/}
-          {/*) : null}*/}
+          {labelMiddle ? (
+            <div
+              style={{
+                display: 'table',
+                width: 'max-content',
+                transform: 'translate(-50% , -50%)',
+                position: 'absolute',
+                left: st.cx0 + st.labelMiddlePos.x,
+                top: st.cy0 + st.labelMiddlePos.y,
+              }}>
+              {labelMiddle}
+            </div>
+          ) : null}
+          {labelEnd ? (
+            <div
+              style={{
+                transform: st.dx > 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
+                width: 'max-content',
+                position: 'absolute',
+                left: st.cx0 + st.labelEndPos.x,
+                top: st.cy0 + st.labelEndPos.y + strokeWidth + 5,
+              }}>
+              {labelEnd}
+            </div>
+          ) : null}
           {_debug ? (
             <>
               {/* possible anchor connections */}

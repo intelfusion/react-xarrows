@@ -324,6 +324,8 @@ export class SmartGrid {
   sources: VectorArr = new VectorArr();
   targets: VectorArr = new VectorArr();
 
+  length: number = 0;
+
   // targetDir: Dir;
 
   constructor(sv: Vector, ev: Vector, rects: Rectangle[], pathMargin) {
@@ -355,11 +357,20 @@ export class SmartGrid {
   getPoints = () => [...this.sources.toList(), ...this.targets.rev().toList()] as const;
   getVectors = () => [...this.sources, ...this.targets.rev()] as const;
 
+  getLength = (): number => {
+    let len = 0;
+    const vectors = this.getVectors();
+    for (let i = 0; i < vectors.length - 1; i++) {
+      len += vectors[i + 1].sub(vectors[i]).absSize();
+    }
+    return len;
+  };
+
   getPointOnGrid = (len: number) => {
     let lenCount = 0;
     const vectors = this.getVectors();
     for (let i = 0; i < vectors.length - 1; i++) {
-      let l = new Line(vectors[i], new Vector(vectors[i + 1]));
+      let l = new Line(vectors[i], vectors[i + 1]);
       let lineLen = l.diff().absSize();
       if (lenCount + lineLen > len) {
         return vectors[i].add(new Dir(l.diff()).mul(len - lenCount));
