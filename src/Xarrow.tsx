@@ -315,10 +315,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let excLeft = _calc + Number(_extendSVGcanvas);
     let excUp = _calc + Number(_extendSVGcanvas);
     let excDown = _calc + Number(_extendSVGcanvas);
-    excRight = 50;
-    excLeft = 50;
-    excUp = 50;
-    excDown = 50;
+    // excRight = 50;
+    // excLeft = 50;
+    // excUp = 50;
+    // excDown = 50;
 
     ////////////////////////////////////
     // arrow point to point calculations
@@ -365,8 +365,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let tailOffset = { x: 0, y: 0 },
       perTailOffset;
     if (tailRef.current) {
-      [fTailSize, tailOffset, perTailOffset] = getEdgeOffset(tailBox, fTailSize, sdd);
-      sv = sv.add(sdd.mul(perTailOffset * tailShape.offsetForward));
+      [fTailSize, tailOffset, perTailOffset] = getEdgeOffset(tailBox, fTailSize, sdd.reverse());
+      sv = sv.add(sdd.reverse().mul(perTailOffset * tailShape.offsetForward));
     }
 
     // console.log(sv, ev, [], pathMargin);
