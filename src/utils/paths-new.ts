@@ -320,7 +320,7 @@ export const chooseSimplestPath = (sv: Vector, ev: Vector, pathMargin: number): 
   return [svDirs, evDirs];
 };
 
-class SmartGrid {
+export class SmartGrid {
   sources: VectorArr = new VectorArr();
   targets: VectorArr = new VectorArr();
 
@@ -353,6 +353,21 @@ class SmartGrid {
   };
 
   getPoints = () => [...this.sources.toList(), ...this.targets.rev().toList()] as const;
+  getVectors = () => [...this.sources, ...this.targets.rev()] as const;
+
+  getPointOnGrid = (len: number) => {
+    let lenCount = 0;
+    const vectors = this.getVectors();
+    for (let i = 0; i < vectors.length - 1; i++) {
+      let l = new Line(vectors[i], new Vector(vectors[i + 1]));
+      let lineLen = l.diff().absSize();
+      if (lenCount + lineLen > len) {
+        return vectors[i].add(new Dir(l.diff()).mul(len - lenCount));
+      }
+      lenCount += lineLen;
+    }
+    return vectors[vectors.length - 1];
+  };
 }
 
 export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[], pathMargin) => {
@@ -408,8 +423,8 @@ if (require.main === module) {
   // testPoints2Vector();
   const test = () => {
     const testZ = () => {
-      let sv = new Vector(50, 50),
-        ev = new Vector(32, 147);
+      let sv = new Vector(1000, 1000),
+        ev = new Vector(1100, 1100);
       let sd = [dirs['right'], dirs['left']],
         ed = [dirs['right']];
       // let points = calcSmartPath(sp, 'right', ep, 'top');
@@ -417,7 +432,7 @@ if (require.main === module) {
       // const smartGrid = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15);
       const smartGrid = calcSmartPath(sv.setDirs(sd), ev.setDirs(ed), [], 30);
       const points = smartGrid.getPoints();
-      console.log(points);
+      console.log(pick(smartGrid.getPointOnGrid(120), ['x', 'y']));
     };
     testZ();
   };

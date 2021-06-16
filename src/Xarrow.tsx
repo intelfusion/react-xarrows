@@ -21,7 +21,16 @@ import {
   tSvgElems,
   xarrowPropsType,
 } from './types';
-import { calcSmartPath, chooseSimplestPath, EAD, points2Vector, pointsToLines, SAD, Vector } from './utils/paths-new';
+import {
+  calcSmartPath,
+  chooseSimplestPath,
+  EAD,
+  points2Vector,
+  pointsToLines,
+  SAD,
+  SmartGrid,
+  Vector,
+} from './utils/paths-new';
 
 const pathMargin = 30;
 
@@ -122,6 +131,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     fHeadSize: 1,
     fTailSize: 1,
     arrowPath: ``,
+    labelStartPos: { x: 0, y: 0 },
   });
 
   // // debug
@@ -370,7 +380,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     }
 
     // console.log(sv, ev, [], pathMargin);
-    let smartGrid = calcSmartPath(sv, ev, [], pathMargin);
+    let smartGrid = new SmartGrid(sv, ev, [], pathMargin);
     let headVector = ev;
     let tailVector = sv;
     let headDir = headVector.faceDirs[0];
@@ -389,6 +399,11 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       ch = absDy + excUp + excDown;
     cx0 -= excLeft;
     cy0 -= excUp;
+
+    let lineLength = lineRef.current.getTotalLength();
+
+    const labelStartPos = pick(smartGrid.getPointOnGrid(lineLength * 0.01), ['x', 'y']);
+    console.log(points, lineLength, labelStartPos);
 
     // //labels
     // const bzx = bzFunction(x1, cpx1, cpx2, x2);
@@ -424,10 +439,11 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       mainDivPos,
       xSign,
       ySign,
-      lineLength: lineRef.current.getTotalLength(),
+      lineLength,
       fHeadSize,
       fTailSize,
       arrowPath,
+      labelStartPos,
     });
   };
 
@@ -661,18 +677,18 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
             ) : null}
           </svg>
 
-          {/*{labelStart ? (*/}
-          {/*  <div*/}
-          {/*    style={{*/}
-          {/*      transform: st.dx < 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',*/}
-          {/*      width: 'max-content',*/}
-          {/*      position: 'absolute',*/}
-          {/*      left: st.cx0 + st.labelStartPos.x,*/}
-          {/*      top: st.cy0 + st.labelStartPos.y - strokeWidth - 5,*/}
-          {/*    }}>*/}
-          {/*    {labelStart}*/}
-          {/*  </div>*/}
-          {/*) : null}*/}
+          {labelStart ? (
+            <div
+              style={{
+                transform: st.dx < 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
+                width: 'max-content',
+                position: 'absolute',
+                left: st.cx0 + st.labelStartPos.x,
+                top: st.cy0 + st.labelStartPos.y - strokeWidth - 5,
+              }}>
+              {labelStart}
+            </div>
+          ) : null}
           {/*{labelMiddle ? (*/}
           {/*  <div*/}
           {/*    style={{*/}
