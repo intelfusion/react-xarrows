@@ -386,9 +386,11 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     cy0 -= excUp;
 
     let lineLength = smartGrid.getLength();
-    const labelStartPos = labels.start ? pick(smartGrid.getPointOnGrid(lineLength * 0.03), ['x', 'y']) : null;
+    const labelStartPos = labels.start ? pick(smartGrid.getPointOnGrid(10), ['x', 'y']) : null;
     const labelMiddlePos = labels.middle ? pick(smartGrid.getPointOnGrid(lineLength * 0.5), ['x', 'y']) : null;
-    const labelEndPos = labels.end ? pick(smartGrid.getPointOnGrid(lineLength * 0.97), ['x', 'y']) : null;
+    const labelEndPos = labels.end ? pick(smartGrid.getPointOnGrid(lineLength - 10), ['x', 'y']) : null;
+    // const labelEndPos = labels.end ? pick(smartGrid.getPointOnGrid(lineLength - fHeadSize * (1 - headShape.offsetForward)), ['x', 'y']) : null;
+    // console.log(headShape.offsetForward, fHeadSize);
 
     // handle custom labels
     const labelsPos: { pos: { x: number; y: number }; label: labelType }[] = [];
