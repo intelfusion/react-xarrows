@@ -327,6 +327,7 @@ const CustomizeArrow = () => {
     _debug,
     _pathMargin,
     animateDrawing: _animateDrawing,
+    gridBreak: 0.5,
   };
   /////////////////////////////////////////////////
 

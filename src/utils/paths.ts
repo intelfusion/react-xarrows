@@ -240,7 +240,7 @@ const drawToTarget = (grid: SmartGrid): void => {
   }
   if (svDir.eq(evDir)) {
     // console.log('Z curve');
-    let svNext = sv.add(svf.dev(2));
+    let svNext = sv.add(svf.mul(grid.options.zGridBreak));
     grid.pushSource(svNext);
     grid.pushSource(svNext.add(svr).setDirs([sdf]));
     return drawToTarget(grid);
@@ -326,11 +326,13 @@ export class SmartGrid {
   length: number = 0;
 
   // targetDir: Dir;
+  options: { zGridBreak: number };
 
-  constructor(sv: Vector, ev: Vector, rects: Rectangle[], pathMargin) {
+  constructor(sv: Vector, ev: Vector, rects: Rectangle[], pathMargin, options = { zGridBreak: 0.5 }) {
     // let [sd, ed] = chooseSimplestPath(sv, ev, pathMargin);
     // this.sources.push(sv.setDirs(sd));
     // this.targets.push(ev.setDirs(ed));
+    this.options = options;
     this.sources.push(sv);
     this.targets.push(ev);
     handleMargin(this, pathMargin);
@@ -380,12 +382,6 @@ export class SmartGrid {
   };
 }
 
-export const calcSmartPath = (sp: Vector, ep: Vector, rects: Rectangle[], pathMargin) => {
-  return new SmartGrid(sp, ep, rects, pathMargin);
-  // const smartGrid = new SmartGrid(sp, ep, rects, pathMargin);
-  // return smartGrid.getPoints();
-};
-
 class Rectangle {
   left: Line;
   top: Line;
@@ -431,28 +427,33 @@ if (require.main === module) {
   // console.log(new Dir(1, -1).toDegree());
 
   // testPoints2Vector();
-  const test = () => {
-    const testZ = () => {
-      let sv = new Vector(1000, 1000),
-        ev = new Vector(1000, 1100);
-      let sd = [dirs['right'], dirs['left']],
-        ed = [dirs['right']];
-      // let points = calcSmartPath(sp, 'right', ep, 'top');
-      let [sdd, edd] = chooseSimplestPath(sv.setDirs(sd), ev.setDirs(ed), 30);
-      // const smartGrid = new SmartGrid(new Vector(sp, sd), new Vector(ep, ed), [], 15);
-      const smartGrid = calcSmartPath(sv.setDirs(sd), ev.setDirs(ed), [], 30);
-      const points = smartGrid.getPoints();
-      console.log(points);
-    };
-    testZ();
+  const testDirs = () => {
+    let sv = new Vector(1000, 1000),
+      ev = new Vector(1000, 1100);
+    let sd = [dirs['right'], dirs['left']],
+      ed = [dirs['right']];
+    let [sdd, edd] = chooseSimplestPath(sv.setDirs(sd), ev.setDirs(ed), 30);
+    const smartGrid = new SmartGrid(sv.setDirs(sd), ev.setDirs(ed), [], 30);
+    const points = smartGrid.getPoints();
+    console.log(points);
   };
-  test();
-
+  // testDirs();
   let arr = [
     [169, 50],
     [169, 120],
     [270.1830003261566, 120],
   ];
+  const testAvoidRects = () => {
+    let sv = new Vector(1000, 1000),
+      ev = new Vector(1100, 1100);
+    let sd = [dirs['right']],
+      ed = [dirs['right']];
+    const rect = [];
+    const smartGrid = new SmartGrid(sv.setDirs(sd), ev.setDirs(ed), [], 30);
+    const points = smartGrid.getPoints();
+    return points;
+  };
+  console.log(testAvoidRects());
   // console.log(pointsToLines(arr));
 
   // console.log(points2Vector(1000, 1000, 'top', []));

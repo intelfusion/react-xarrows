@@ -22,16 +22,7 @@ import {
   tSvgElems,
   xarrowPropsType,
 } from './types';
-import {
-  calcSmartPath,
-  chooseSimplestPath,
-  EAD,
-  points2Vector,
-  pointsToLines,
-  SAD,
-  SmartGrid,
-  Vector,
-} from './utils/paths-new';
+import { chooseSimplestPath, EAD, points2Vector, pointsToLines, SAD, SmartGrid, Vector } from './utils/paths';
 
 // const pathMargin = 30;
 
@@ -129,6 +120,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     labelMiddlePos: { x: 0, y: 0 },
     labelEndPos: { x: 0, y: 0 },
     labelsPos: [] as { pos: { x: number; y: number }; label: labelType }[],
+    smartGrid: null as SmartGrid,
   });
 
   // // debug
@@ -360,7 +352,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     }
 
     // console.log(sv, ev, [], pathMargin);
-    let smartGrid = new SmartGrid(sv, ev, [], _pathMargin);
+    let smartGrid = new SmartGrid(sv, ev, [], _pathMargin, { zGridBreak: gridBreak });
     let headVector = ev;
     let tailVector = sv;
     let headDir = headVector.faceDirs[0];
@@ -459,6 +451,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       labelMiddlePos,
       labelEndPos,
       labelsPos,
+      smartGrid,
     });
   };
 
@@ -504,8 +497,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
 
   // handle draw animation
   useLayoutEffect(() => {
-    if (lineRef.current) setSt((prevSt) => ({ ...prevSt, lineLength: lineRef.current.getTotalLength() }));
-    // if (lineRef.current) setSt((prevSt) => ({ ...prevSt, lineLength: st.lineLength }));
+    // if (lineRef.current) setSt((prevSt) => ({ ...prevSt, lineLength: lineRef.current.getTotalLength() }));
+    if (lineRef.current) setSt((prevSt) => ({ ...prevSt, lineLength: st.lineLength }));
   }, [lineRef.current]);
 
   // for adjustments of custom svg shapes
@@ -698,7 +691,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
           {labels.start ? (
             <div
               style={{
-                transform: st.dx < 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
+                // transform: st.dx < 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
+                transform: `translate(${st.smartGrid?.sources[0].faceDirs[0].x < 0 ? -100 : 0}% , ${
+                  st.dy > 0 ? '+' : '-'
+                }50%)`,
                 width: 'max-content',
                 position: 'absolute',
                 left: st.cx0 + st.labelStartPos.x,
@@ -723,7 +719,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
           {labels.end ? (
             <div
               style={{
-                transform: st.dx > 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
+                // transform: st.dx > 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
+                transform: `translate(${st.smartGrid?.targets[0].faceDirs[0].x > 0 ? -100 : 0}% , ${
+                  st.dy < 0 ? '-50' : '-150'
+                }%)`,
                 width: 'max-content',
                 position: 'absolute',
                 left: st.cx0 + st.labelEndPos.x,
@@ -732,7 +731,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
               {labels.end}
             </div>
           ) : null}
-          {/* custom labels (like {30%50:"some label"})*/}
+          {/* custom labels (like label={30%50:"some label"})*/}
           {st.labelsPos.map((l, i) => (
             <div
               key={i}
