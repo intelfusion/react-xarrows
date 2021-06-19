@@ -722,7 +722,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
             <div
               style={{
                 // transform: st.dx > 0 ? 'translate(-100% , -50%)' : 'translate(-0% , -50%)',
-                transform: `translate(${st.smartGrid?.targets[0].faceDirs[0].x > 0 ? -100 : 0}% , ${
+                transform: `translate(${st.smartGrid?.getTarget().faceDirs[0].x > 0 ? -100 : 0}% , ${
                   st.dy < 0 ? '-50' : '-150'
                 }%)`,
                 width: 'max-content',
