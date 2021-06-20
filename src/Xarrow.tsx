@@ -10,6 +10,7 @@ import { getShortestLine, prepareAnchor } from './utils/anchors';
 import {
   _faceDirType,
   _prevPosType,
+  _xarrowVarPropsType,
   arrowShapes,
   labelsType,
   labelType,
@@ -27,7 +28,7 @@ import { chooseSimplestPath, EAD, points2Vector, pointsToLines, SAD, SmartGrid, 
 // const pathMargin = 30;
 
 const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
-  const varProps = omit(props, ['start', 'end']);
+  const varProps = omit(props, ['start', 'end']) as _xarrowVarPropsType;
   let {
     startAnchor = 'auto',
     endAnchor = 'auto',
@@ -77,7 +78,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   const endRef = useRef(null);
 
   const prevPosState = useRef<_prevPosType>(null);
-  const prevProps = useRef<xarrowPropsType>(null);
+  const prevProps = useRef<_xarrowVarPropsType>(null);
 
   const headBox = useRef({ x: 0, y: 0, width: 1, height: 1 });
   const tailBox = useRef({ x: 0, y: 0, width: 1, height: 1 });

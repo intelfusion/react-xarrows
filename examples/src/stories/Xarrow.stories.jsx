@@ -266,7 +266,7 @@ AllStates.args = {
   tailSize: 6,
   path: 'smooth',
   curveness: 0.8,
-  gridBreak: 0.5,
+  gridBreak: '50%',
   dashness: false,
   headShape: 'arrow1',
   tailShape: 'arrow1',
