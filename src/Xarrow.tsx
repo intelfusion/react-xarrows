@@ -62,6 +62,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     _extendSVGcanvas = 0,
     _debug = false,
     _pathMargin = 20,
+    avoidRects = [],
     ...extraProps
   } = varProps;
 

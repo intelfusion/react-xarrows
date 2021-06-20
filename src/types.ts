@@ -73,6 +73,7 @@ export type xarrowPropsType = {
   headShape?: svgEdgeShapeType | svgCustomEdgeType;
   tailShape?: svgEdgeShapeType | svgCustomEdgeType;
   animateDrawing?: boolean | number;
+  avoidRects?: (refType | rectType)[];
   passProps?: JSX.IntrinsicElements[svgElemType];
   SVGcanvasProps?: React.SVGAttributes<SVGSVGElement>;
   arrowBodyProps?: React.SVGProps<SVGPathElement>;
@@ -97,7 +98,7 @@ export type anchorCustomPositionType = {
   offset?: { rightness?: number; bottomness?: number };
   facingDir?: _faceDirType | _faceDirType[];
 };
-export type refType = React.MutableRefObject<any> | string;
+export type refType = React.MutableRefObject<HTMLElement> | string;
 export type labelsType = {
   start?: labelType;
   middle?: labelType;
@@ -124,6 +125,12 @@ export type dimensionType = {
   y: number;
   right: number;
   bottom: number;
+};
+export type rectType = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 export type _prevPosType = {
   start: dimensionType;

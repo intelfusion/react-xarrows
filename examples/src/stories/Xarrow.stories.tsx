@@ -2,12 +2,13 @@ import React, { useRef, useState } from 'react';
 
 import Xarrow, { xarrowPropsType } from 'react-xarrows';
 import Draggable from 'react-draggable';
+import { Meta, Story } from '@storybook/react';
 
 const flexBox = {
   display: 'flex',
   justifyContent: 'space-evenly',
   alignItems: 'center',
-};
+} as const;
 
 const boxStyle = {
   border: '1px #999 solid',
@@ -19,7 +20,7 @@ const boxStyle = {
   alignItems: 'center',
   display: 'flex',
   justifyContent: 'center',
-};
+} as const;
 
 const Box = ({ id, style = {} }) => {
   return (
@@ -28,6 +29,11 @@ const Box = ({ id, style = {} }) => {
     </div>
   );
 };
+
+export default {
+  title: 'Xarrow',
+  component: Xarrow,
+} as Meta;
 
 const SimpleExampleTemplate = ({ ...args }) => {
   const [refId, setRefId] = useState(false);
@@ -54,7 +60,7 @@ const SimpleExampleTemplate = ({ ...args }) => {
   );
 };
 
-const Template = (args) => <SimpleExampleTemplate {...args} />;
+const Template: Story<xarrowPropsType> = (args) => <SimpleExampleTemplate {...args} />;
 
 export const ToggleEnd = Template.bind({});
 
@@ -81,6 +87,8 @@ const DraggableBox = ({ box, forceRerender, style = {} }) => {
   );
 };
 
+type typeDim = { height: number; width: number };
+type typeCustomSimpleTemplate = { box1: typeDim; box2: typeDim } & xarrowPropsType;
 const CustomSimpleTemplate = ({ box1: box1Style, box2: box2Style, ...xarrowProps }) => {
   const [, setRender] = useState({});
   const forceRerender = () => setRender({});
@@ -95,7 +103,7 @@ const CustomSimpleTemplate = ({ box1: box1Style, box2: box2Style, ...xarrowProps
   );
 };
 
-export const CustomSimple = (ar) => <CustomSimpleTemplate {...ar} />;
+export const CustomSimple: Story<typeCustomSimpleTemplate> = (ar) => <CustomSimpleTemplate {...ar} />;
 
 CustomSimple.args = {
   box1: { height: 150, width: 60 },
@@ -125,6 +133,7 @@ CustomSimple.args = {
 };
 
 export const CustomAdvanced = CustomSimple.bind({});
+
 CustomAdvanced.args = {
   startAnchor: {
     position: 'right',
@@ -187,7 +196,7 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
   const forceRerender = () => setRender({});
   let boxNum = -1;
   // const states = ['right'];
-  const states = ['right', 'left', 'bottom', 'top'];
+  const states = ['right', 'left', 'bottom', 'top'] as const;
   // const states = ['right'];
   return (
     <div style={{ ...canvasStyle, position: 'absolute', flexWrap: 'wrap' }} id="canvas">
@@ -207,7 +216,7 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
               }}
               key={st + st2}>
               <div style={{ position: 'absolute', left: 0, top: 0 }}>
-                {st} -> {st2}
+                {st} -{'>'} {st2}
               </div>
               <DraggableBox2 id={boxNum} forceRerender={forceRerender} style={{ ...boxStyle }} />
               <DraggableBox2 id={boxNum + 1} forceRerender={forceRerender} style={{ ...boxStyle }} />
@@ -251,7 +260,7 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
 //   );
 // };
 
-export const AllStates = (ar) => <AllStatesTemplate {...ar} />;
+export const AllStates: Story<{ box: typeDim } & xarrowPropsType> = (ar) => <AllStatesTemplate {...ar} />;
 AllStates.args = {
   box: { height: 30, width: 50 },
   label: null,
@@ -273,11 +282,6 @@ AllStates.args = {
   animateDrawing: false,
   showXarrow: true,
   _debug: false,
-};
-
-export default {
-  title: 'Xarrow',
-  component: Xarrow,
 };
 
 export const AvoidableRects = () => {
