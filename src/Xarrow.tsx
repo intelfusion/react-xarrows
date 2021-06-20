@@ -64,7 +64,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     _pathMargin = 20,
     ...extraProps
   } = varProps;
-  console.log(extraProps);
 
   const svgRef = useRef(null);
   const lineRef = useRef(null);
@@ -166,21 +165,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
   headColor = headColor ? headColor : color;
   tailColor = tailColor ? tailColor : color;
   lineColor = lineColor ? lineColor : color;
-  let dashStroke = 0,
-    dashNone = 0,
-    animDashSpeed,
-    animDirection = 1;
-  if (dashness) {
-    if (typeof dashness === 'object') {
-      dashStroke = dashness.strokeLen ? Number(dashness.strokeLen) : Number(strokeWidth) * 2;
-      dashNone = dashness.strokeLen ? Number(dashness.nonStrokeLen) : Number(strokeWidth);
-      animDashSpeed = dashness.animation ? Number(dashness.animation) : null;
-    } else if (typeof dashness === 'boolean') {
-      dashStroke = Number(strokeWidth) * 2;
-      dashNone = Number(strokeWidth);
-      animDashSpeed = null;
-    }
-  }
 
   let labels: labelsType = {};
   if (label) {
@@ -380,8 +364,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     const labelStartPos = labels.start ? pick(smartGrid.getPointOnGrid(10), ['x', 'y']) : null;
     const labelMiddlePos = labels.middle ? pick(smartGrid.getPointOnGrid(lineLength * 0.5), ['x', 'y']) : null;
     const labelEndPos = labels.end ? pick(smartGrid.getPointOnGrid(lineLength - 10), ['x', 'y']) : null;
-    // const labelEndPos = labels.end ? pick(smartGrid.getPointOnGrid(lineLength - fHeadSize * (1 - headShape.offsetForward)), ['x', 'y']) : null;
-    // console.log(headShape.offsetForward, fHeadSize);
 
     // handle custom labels
     const labelsPos: { pos: { x: number; y: number }; label: labelType }[] = [];
@@ -433,6 +415,22 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       smartGrid,
     });
   };
+
+  let dashStroke = 0,
+    dashNone = 0,
+    animDashSpeed,
+    animDirection = 1;
+  if (dashness) {
+    if (typeof dashness === 'object') {
+      dashStroke = dashness.strokeLen ? Number(dashness.strokeLen) : Number(strokeWidth) * 2;
+      dashNone = dashness.strokeLen ? Number(dashness.nonStrokeLen) : Number(strokeWidth);
+      animDashSpeed = dashness.animation ? Number(dashness.animation) : null;
+    } else if (typeof dashness === 'boolean') {
+      dashStroke = Number(strokeWidth) * 2;
+      dashNone = Number(strokeWidth);
+      animDashSpeed = null;
+    }
+  }
 
   let dashoffset = dashStroke + dashNone;
   if (animDashSpeed < 0) {
