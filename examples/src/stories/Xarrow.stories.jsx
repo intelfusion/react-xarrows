@@ -290,8 +290,6 @@ export const AvoidableRects = () => {
         width: '500px',
         position: 'absolute',
       }}>
-      <div id="elem1" style={{ ...boxStyle, ...smReTy }} />
-      <div id="elem2" style={{ ...boxStyle, ...smReTy, position: 'relative', left: 200 }} />
       <Xarrow
         start="elem1"
         end="elem2"
@@ -299,6 +297,9 @@ export const AvoidableRects = () => {
         // startAnchor={{ position: 'bottom', offset: { rightness: -30 } }}
         // path={'grid'}
       />
+      <div id="elem1" style={{ ...boxStyle, ...smReTy }} />
+      <div id="elem2" style={{ ...boxStyle, ...smReTy, position: 'relative', left: 200 }} />
+      <div style={{ ...boxStyle, height: 100, width: 10, top: -30, position: 'relative', left: 100 }} />
 
       {/*<div id="elem1" style={boxStyle}>*/}
       {/*  elem1*/}
