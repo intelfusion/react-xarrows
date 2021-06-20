@@ -167,8 +167,9 @@ export const gridBreak = CustomSvgHead.bind({});
 gridBreak.args = {
   path: 'grid',
   endAnchor: 'right',
-  gridBreak: 0.5,
+  gridBreak: '50%',
   arrowBodyProps: {},
+  _extendSVGcanvas: 100,
 };
 
 const DraggableBox2 = ({ id, forceRerender, style = {} }) => {

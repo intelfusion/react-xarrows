@@ -48,6 +48,16 @@ export const xStr2absRelative = (str): { abs: number; relative: number } => {
   }
 };
 
+export const getElemPos = (elem: HTMLElement) => {
+  const pos = elem?.getBoundingClientRect() ?? { left: 0, top: 0, right: 0, bottom: 0 };
+  return {
+    x: pos.left,
+    y: pos.top,
+    right: pos.right,
+    bottom: pos.bottom,
+  };
+};
+
 // export const measureFunc = (func: Function, name = '') => (...args) => {
 //   const t = performance.now();
 //

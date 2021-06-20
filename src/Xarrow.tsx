@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import isEqual from 'lodash.isequal';
 import pick from 'lodash.pick';
 import omit from 'lodash.omit';
-import { getElementByPropGiven, xStr2absRelative } from './utils';
+import { getElementByPropGiven, getElemPos, xStr2absRelative } from './utils';
 import { smoothBezierPoints } from './utils/buzierSmooth';
 import PT from 'prop-types';
 import { buzzierMinSols, bzFunction } from './utils/buzzier';
@@ -27,6 +27,7 @@ import { chooseSimplestPath, EAD, points2Vector, pointsToLines, SAD, SmartGrid, 
 // const pathMargin = 30;
 
 const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
+  const varProps = omit(props, ['start', 'end']);
   let {
     startAnchor = 'auto',
     endAnchor = 'auto',
@@ -61,8 +62,8 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     _debug = false,
     _pathMargin = 20,
     ...extraProps
-  } = props;
-  const varProps = omit(props, ['start', 'end']);
+  } = varProps;
+  console.log(extraProps);
 
   const svgRef = useRef(null);
   const lineRef = useRef(null);
@@ -222,21 +223,9 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     };
   };
 
-  const getElemPos = (elem: HTMLElement) => {
-    const pos = elem?.getBoundingClientRect() ?? { left: 0, top: 0, right: 0, bottom: 0 };
-    return {
-      x: pos.left,
-      y: pos.top,
-      right: pos.right,
-      bottom: pos.bottom,
-    };
-  };
-
   const getElemsPos = (): _prevPosType => {
     let start = getElemPos(startRef.current);
     let end = getElemPos(endRef.current);
-    // let start = getPos(startRef.current);
-    // let end = getPos(endRef.current);
     return { start, end };
   };
 
@@ -296,10 +285,10 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let excLeft = _calc + Number(_extendSVGcanvas);
     let excUp = _calc + Number(_extendSVGcanvas);
     let excDown = _calc + Number(_extendSVGcanvas);
-    // excRight = 50;
-    // excLeft = 50;
-    // excUp = 50;
-    // excDown = 50;
+    excRight = 50;
+    excLeft = 50;
+    excUp = 50;
+    excDown = 50;
 
     ////////////////////////////////////
     // arrow point to point calculations
@@ -465,7 +454,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
       [animStartValue, animEndValue] = [animEndValue, animStartValue];
       animation = animateDrawing * -1 + 's';
     }
-    // }
   } else {
     dashArray = `${dashStroke} ${dashNone}`;
     animation = `${1 / animDashSpeed}s`;
