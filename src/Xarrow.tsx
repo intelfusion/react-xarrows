@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import isEqual from 'lodash.isequal';
 import pick from 'lodash.pick';
 import omit from 'lodash.omit';
-import { getElementByPropGiven } from './utils';
+import { getElementByPropGiven, xStr2absRelative } from './utils';
 import { smoothBezierPoints } from './utils/buzierSmooth';
 import PT from 'prop-types';
 import { buzzierMinSols, bzFunction } from './utils/buzzier';
@@ -42,7 +42,7 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     tailSize = 6,
     path = 'smooth',
     curveness = 0.8,
-    gridBreak = 0.5,
+    gridBreak = '50%',
     // gridRadius = strokeWidth * 2, //todo
     dashness = false,
     headShape = 'arrow1',
@@ -283,7 +283,6 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     let fTailSize = tailSize * strokeWidth; //factored head size
 
     let cu = Number(curveness);
-    gridBreak = Number(gridBreak);
     // gridRadius = Number(gridRadius);
     if (!tPaths.includes(path)) path = 'smooth';
     if (path === 'straight') {
@@ -352,7 +351,9 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     }
 
     // console.log(sv, ev, [], pathMargin);
-    let smartGrid = new SmartGrid(sv, ev, [], _pathMargin, { zGridBreak: gridBreak });
+    let resGridBreak = xStr2absRelative(gridBreak);
+    if (!resGridBreak) resGridBreak = { relative: 50, abs: 0 };
+    let smartGrid = new SmartGrid(sv, ev, [], _pathMargin, { zGridBreak: resGridBreak });
     let headVector = ev;
     let tailVector = sv;
     let headDir = headVector.faceDirs[0];
@@ -395,28 +396,14 @@ const Xarrow: React.FC<xarrowPropsType> = (props: xarrowPropsType) => {
     // handle custom labels
     const labelsPos: { pos: { x: number; y: number }; label: labelType }[] = [];
     for (let key in labels) {
-      let sp = key.split('%');
-      let absLen = 0,
-        percentLen = 0;
-      let found = false;
-      if (sp.length == 1) {
-        let p = parseFloat(sp[0]);
-        if (!isNaN(p)) {
-          absLen = p;
-          found = true;
-        }
-      } else if (sp.length == 2) {
-        let [p1, p2] = [parseFloat(sp[0]), parseFloat(sp[1])];
-        console.log(p1);
-        if (!isNaN(p1)) percentLen = lineLength * (p1 / 100);
-        if (!isNaN(p2)) absLen = p2;
-        if (!isNaN(p1) || !isNaN(p2)) found = true;
-      }
-      if (found)
+      let res = xStr2absRelative(key);
+      if (res) {
+        let { relative: percentLen, abs: absLen } = res;
         labelsPos.push({
-          pos: pick(smartGrid.getPointOnGrid(percentLen + absLen), ['x', 'y']),
+          pos: pick(smartGrid.getPointOnGrid(lineLength * percentLen + absLen), ['x', 'y']),
           label: labels[key],
         });
+      }
     }
 
     setSt({
@@ -833,7 +820,7 @@ Xarrow.propTypes = {
   path: PT.oneOf(tPaths),
   showXarrow: PT.bool,
   curveness: PT.number,
-  gridBreak: PT.number,
+  gridBreak: PT.string,
   dashness: PT.oneOfType([PT.bool, PT.object]),
   headShape: pSvgEdgeType,
   tailShape: pSvgEdgeType,

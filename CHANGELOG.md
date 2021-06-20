@@ -1,3 +1,8 @@
+## next
+- many many changes
+changes that i will forget:
+- `gridBreak` type changed from `number` to `string`
+
 ## v1.7.0:
 
 big update!

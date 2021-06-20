@@ -28,6 +28,26 @@ export const measureFunc = (callbackFunc: Function, name = '') => {
   return returnVal;
 };
 
+// return relative,abs
+export const xStr2absRelative = (str): { abs: number; relative: number } => {
+  if (typeof str !== 'string') return;
+  let sp = str.split('%');
+  let absLen = 0,
+    percentLen = 0;
+  if (sp.length == 1) {
+    let p = parseFloat(sp[0]);
+    if (!isNaN(p)) {
+      absLen = p;
+      return { abs: absLen, relative: 0 };
+    }
+  } else if (sp.length == 2) {
+    let [p1, p2] = [parseFloat(sp[0]), parseFloat(sp[1])];
+    if (!isNaN(p1)) percentLen = p1 / 100;
+    if (!isNaN(p2)) absLen = p2;
+    if (!isNaN(p1) || !isNaN(p2)) return { abs: absLen, relative: percentLen };
+  }
+};
+
 // export const measureFunc = (func: Function, name = '') => (...args) => {
 //   const t = performance.now();
 //

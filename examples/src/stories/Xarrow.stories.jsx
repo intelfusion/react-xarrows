@@ -114,7 +114,7 @@ CustomSimple.args = {
   tailSize: 6,
   path: 'smooth',
   curveness: 0.8,
-  gridBreak: 0.5,
+  gridBreak: '50%',
   dashness: false,
   headShape: 'arrow2',
   tailShape: 'arrow1',
@@ -279,7 +279,8 @@ export default {
   component: Xarrow,
 };
 
-export const Test = () => {
+export const AvoidableRects = () => {
+  const smReTy = { width: 10, height: 10 };
   return (
     <div
       style={{
@@ -288,29 +289,39 @@ export const Test = () => {
         width: '500px',
         position: 'absolute',
       }}>
-      <div id="elem1" style={boxStyle}>
-        elem1
-      </div>
-      <div id="elem2" style={{ ...boxStyle, position: 'relative', left: '100px' }}>
-        elem2
-      </div>
-      <div id="elem3" style={{ ...boxStyle, position: 'relative', left: '100px' }}>
-        elem2
-      </div>
+      <div id="elem1" style={{ ...boxStyle, ...smReTy }} />
+      <div id="elem2" style={{ ...boxStyle, ...smReTy, position: 'relative', left: 200 }} />
       <Xarrow
         start="elem1"
         end="elem2"
         showHead={false}
-        startAnchor={{ position: 'bottom', offset: { rightness: -30 } }}
-        path={'grid'}
+        // startAnchor={{ position: 'bottom', offset: { rightness: -30 } }}
+        // path={'grid'}
       />
-      <Xarrow
-        start="elem1"
-        end="elem3"
-        showHead={false}
-        startAnchor={{ position: 'bottom', offset: { rightness: -30 } }}
-        path={'grid'}
-      />
+
+      {/*<div id="elem1" style={boxStyle}>*/}
+      {/*  elem1*/}
+      {/*</div>*/}
+      {/*<div id="elem2" style={{ ...boxStyle, position: 'relative', left: '100px' }}>*/}
+      {/*  elem2*/}
+      {/*</div>*/}
+      {/*<div id="elem3" style={{ ...boxStyle, position: 'relative', left: '100px' }}>*/}
+      {/*  elem2*/}
+      {/*</div>*/}
+      {/*<Xarrow*/}
+      {/*  start="elem1"*/}
+      {/*  end="elem2"*/}
+      {/*  showHead={false}*/}
+      {/*  startAnchor={{ position: 'bottom', offset: { rightness: -30 } }}*/}
+      {/*  path={'grid'}*/}
+      {/*/>*/}
+      {/*<Xarrow*/}
+      {/*  start="elem1"*/}
+      {/*  end="elem3"*/}
+      {/*  showHead={false}*/}
+      {/*  startAnchor={{ position: 'bottom', offset: { rightness: -30 } }}*/}
+      {/*  path={'grid'}*/}
+      {/*/>*/}
     </div>
   );
 };

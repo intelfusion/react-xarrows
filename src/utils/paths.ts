@@ -240,7 +240,7 @@ const drawToTarget = (grid: SmartGrid): void => {
   }
   if (svDir.eq(evDir)) {
     // console.log('Z curve');
-    let svNext = sv.add(svf.mul(grid.options.zGridBreak));
+    let svNext = sv.add(svf.mul(grid.options.zGridBreak.relative)).add(sdf.mul(grid.options.zGridBreak.abs));
     grid.pushSource(svNext);
     grid.pushSource(svNext.add(svr).setDirs([sdf]));
     return drawToTarget(grid);
@@ -326,9 +326,15 @@ export class SmartGrid {
   length: number = 0;
 
   // targetDir: Dir;
-  options: { zGridBreak: number };
+  options: { zGridBreak: { abs: number; relative: number } };
 
-  constructor(sv: Vector, ev: Vector, rects: Rectangle[], pathMargin, options = { zGridBreak: 0.5 }) {
+  constructor(
+    sv: Vector,
+    ev: Vector,
+    rects: Rectangle[],
+    pathMargin,
+    options = { zGridBreak: { abs: 0, relative: 50 } }
+  ) {
     // let [sd, ed] = chooseSimplestPath(sv, ev, pathMargin);
     // this.sources.push(sv.setDirs(sd));
     // this.targets.push(ev.setDirs(ed));
