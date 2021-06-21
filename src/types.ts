@@ -98,7 +98,7 @@ export type anchorCustomPositionType = {
   offset?: { rightness?: number; bottomness?: number };
   facingDir?: _faceDirType | _faceDirType[];
 };
-export type refType = React.MutableRefObject<HTMLElement> | string;
+export type refType = React.MutableRefObject<any> | string;
 export type labelsType = {
   start?: labelType;
   middle?: labelType;

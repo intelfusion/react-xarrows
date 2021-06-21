@@ -30,7 +30,8 @@ export const measureFunc = (callbackFunc: Function, name = '') => {
 
 // return relative,abs
 export const xStr2absRelative = (str): { abs: number; relative: number } => {
-  if (typeof str !== 'string') return;
+  if (typeof str !== 'string') return { abs: 0, relative: 0.5 };
+  console.log(str);
   let sp = str.split('%');
   let absLen = 0,
     percentLen = 0;

@@ -3,9 +3,7 @@ import isEqual from 'lodash.isequal';
 import pick from 'lodash.pick';
 import omit from 'lodash.omit';
 import { getElementByPropGiven, getElemPos, xStr2absRelative } from './utils';
-import { smoothBezierPoints } from './utils/buzierSmooth';
 import PT from 'prop-types';
-import { buzzierMinSols, bzFunction } from './utils/buzzier';
 import { getShortestLine, prepareAnchor } from './utils/anchors';
 import {
   _faceDirType,

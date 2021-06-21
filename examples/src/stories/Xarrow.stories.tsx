@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useRef, useState } from 'react';
 
 import Xarrow, { xarrowPropsType } from 'react-xarrows';
@@ -124,7 +125,7 @@ CustomSimple.args = {
   curveness: 0.8,
   gridBreak: '50%',
   dashness: false,
-  headShape: 'arrow2',
+  headShape: 'arrow1',
   tailShape: 'arrow1',
   animateDrawing: false,
   showXarrow: true,
@@ -235,31 +236,6 @@ const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
   );
 };
 
-// const AllStatesTemplate = ({ box: boxStyle, ...xarrowProps }) => {
-//   const [, setRender] = useState({});
-//   const forceRerender = () => setRender({});
-//   const states = ['right'];
-//   return (
-//     <div style={{ ...canvasStyle, position: 'absolute', flexWrap: 'wrap' }} id="canvas">
-//       <div
-//         style={{
-//           ...canvasStyle,
-//           alignItems: 'center',
-//           justifyContent: 'space-evenly',
-//           width: 250,
-//           height: 100,
-//           border: '2px solid black',
-//           // position: 'relative',
-//         }}>
-//         <div style={{ position: 'absolute', left: 0, top: 0 }}>5</div>
-//         <DraggableBox2 id={1} forceRerender={forceRerender} style={{ ...boxStyle }} />
-//         <DraggableBox2 id={2} forceRerender={forceRerender} style={{ ...boxStyle }} />
-//         <Xarrow start={'1'} end={'2'} {...xarrowProps} startAnchor={'right'} endAnchor={'right'} />
-//       </div>
-//     </div>
-//   );
-// };
-
 export const AllStates: Story<{ box: typeDim } & xarrowPropsType> = (ar) => <AllStatesTemplate {...ar} />;
 AllStates.args = {
   box: { height: 30, width: 50 },
@@ -301,6 +277,7 @@ export const AvoidableRects = () => {
         // startAnchor={{ position: 'bottom', offset: { rightness: -30 } }}
         // path={'grid'}
       />
+      <div style={{ height: 30 }} />
       <div id="elem1" style={{ ...boxStyle, ...smReTy }} />
       <div id="elem2" style={{ ...boxStyle, ...smReTy, position: 'relative', left: 200 }} />
       <div style={{ ...boxStyle, height: 100, width: 10, top: -30, position: 'relative', left: 100 }} />
