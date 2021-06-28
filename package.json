@@ -46,7 +46,8 @@
   },
   "scripts": {
     "build": "tsc -p .",
-    "start": "yarn --cwd .\\examples\\ start"
+    "start": "yarn --cwd .\\examples\\ start",
+    "prepare": "npm run build"
   },
   "browserslist": [
     ">0.2%",
