@@ -59,7 +59,8 @@
   "files": [
     "lib",
     "package.json",
-    "README.md"
+    "README.md",
+    "tsconfig.json"
   ],
   "prettier": {
     "printWidth": 120,
